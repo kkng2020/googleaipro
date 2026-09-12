@@ -45,10 +45,10 @@
     {
       "id": "GAIP-VOUCHER-04",
       "url": "https://one.google.com/promo/ai-pro-sample-4",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
+      "orderId": "GAIP-260913-3RH3B",
+      "soldAt": "2026-09-12T18:06:43.492Z",
       "buyerName": "Pelanggan 0533",
       "buyerContact": null,
       "buyerPhone": "081381290533"
@@ -56,24 +56,24 @@
     {
       "id": "GAIP-VOUCHER-05",
       "url": "https://one.google.com/promo/ai-pro-sample-5",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
-      "buyerName": null,
+      "orderId": "GAIP-260913-69PW9",
+      "soldAt": "2026-09-12T18:36:28.955Z",
+      "buyerName": "Pelanggan 6789",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "08123456789"
     },
     {
       "id": "GAIP-VOUCHER-06",
       "url": "https://one.google.com/promo/ai-pro-sample-6",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
-      "buyerName": null,
+      "orderId": "GAIP-260913-83KOC",
+      "soldAt": "2026-09-12T18:23:22.770Z",
+      "buyerName": "Pelanggan 6789",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "08123456789"
     },
     {
       "id": "GAIP-VOUCHER-07",
@@ -82,9 +82,9 @@
       "lockedUntil": null,
       "orderId": null,
       "soldAt": null,
-      "buyerName": null,
+      "buyerName": "Pelanggan 7890",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "081234567890"
     },
     {
       "id": "GAIP-VOUCHER-08",
@@ -93,9 +93,9 @@
       "lockedUntil": null,
       "orderId": null,
       "soldAt": null,
-      "buyerName": null,
+      "buyerName": "Pelanggan 6789",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "08123456789"
     },
     {
       "id": "GAIP-VOUCHER-09",
@@ -104,20 +104,20 @@
       "lockedUntil": null,
       "orderId": null,
       "soldAt": null,
-      "buyerName": null,
+      "buyerName": "Pelanggan 6789",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "08123456789"
     },
     {
       "id": "GAIP-VOUCHER-10",
       "url": "https://one.google.com/promo/ai-pro-sample-10",
-      "status": "AVAILABLE",
-      "lockedUntil": null,
-      "orderId": null,
+      "status": "LOCKED",
+      "lockedUntil": 1789238322558,
+      "orderId": "GAIP-260913-YDFS4",
       "soldAt": null,
-      "buyerName": null,
+      "buyerName": "Pelanggan 6789",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "08123456789"
     }
   ],
   "orders": [
@@ -229,6 +229,176 @@
       "paymentDetails": {
         "method": "SIMULATOR_TEST",
         "paidAt": "2026-09-12T17:58:09.741Z"
+      }
+    },
+    {
+      "id": "GAIP-260913-3RH3B",
+      "transactionId": "YNZR-26QN-09X8-132U",
+      "amount": 75006,
+      "voucherId": "GAIP-VOUCHER-04",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/YNZR-26QN-09X8-132U.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/YNZR-26QN-09X8-132U.png",
+      "paymentUrl": "https://app.buatqris.site/trx/YNZR-26QN-09X8-132U",
+      "customerName": "Pelanggan 0533",
+      "customerPhone": "081381290533",
+      "createdAt": "2026-09-12T18:04:06.466Z",
+      "expiresAt": "2026-09-12T19:04:06.000Z",
+      "paidAt": "2026-09-12T18:06:43.492Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "provider": "buatqris",
+        "statusCheck": {
+          "transaction_id": "YNZR-26QN-09X8-132U",
+          "status": "success",
+          "amount": 75000,
+          "total_amount": 75006,
+          "admin_fee": 1725,
+          "credit_amount": 73275,
+          "qris_method": "test",
+          "updated_at": "2026-09-13T01:06:32+07:00"
+        },
+        "paidAt": "2026-09-13T01:06:32+07:00"
+      }
+    },
+    {
+      "id": "GAIP-260913-NETJZ",
+      "transactionId": "XSEV-26C9-096K-13J3",
+      "amount": 75070,
+      "voucherId": "GAIP-VOUCHER-05",
+      "status": "EXPIRED",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/XSEV-26C9-096K-13J3.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/XSEV-26C9-096K-13J3.png",
+      "paymentUrl": "https://app.buatqris.site/trx/XSEV-26C9-096K-13J3",
+      "customerName": "Pelanggan 7890",
+      "customerPhone": "081234567890",
+      "createdAt": "2026-09-12T18:21:50.318Z",
+      "expiresAt": "2026-09-12T19:21:50.000Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-83KOC",
+      "transactionId": "PFNB-26VX-09V4-139K",
+      "amount": 75057,
+      "voucherId": "GAIP-VOUCHER-06",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/PFNB-26VX-09V4-139K.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/PFNB-26VX-09V4-139K.png",
+      "paymentUrl": "https://app.buatqris.site/trx/PFNB-26VX-09V4-139K",
+      "customerName": "Pelanggan 6789",
+      "customerPhone": "08123456789",
+      "createdAt": "2026-09-12T18:22:46.820Z",
+      "expiresAt": "2026-09-12T19:22:47.000Z",
+      "paidAt": "2026-09-12T18:23:22.770Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "provider": "buatqris",
+        "statusCheck": {
+          "transaction_id": "PFNB-26VX-09V4-139K",
+          "status": "success",
+          "amount": 75000,
+          "total_amount": 75057,
+          "admin_fee": 1725,
+          "credit_amount": 73275,
+          "qris_method": "test",
+          "updated_at": "2026-09-13T01:23:14+07:00"
+        },
+        "paidAt": "2026-09-13T01:23:14+07:00"
+      }
+    },
+    {
+      "id": "GAIP-260913-MRVRU",
+      "transactionId": "KG5Q-26TP-096C-137G",
+      "amount": 75010,
+      "voucherId": "GAIP-VOUCHER-07",
+      "status": "EXPIRED",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/KG5Q-26TP-096C-137G.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/KG5Q-26TP-096C-137G.png",
+      "paymentUrl": "https://app.buatqris.site/trx/KG5Q-26TP-096C-137G",
+      "customerName": "Pelanggan 7890",
+      "customerPhone": "081234567890",
+      "createdAt": "2026-09-12T18:23:45.083Z",
+      "expiresAt": "2026-09-12T19:23:45.000Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-3YK33",
+      "transactionId": "MZP2-26P9-095X-13W9",
+      "amount": 75003,
+      "voucherId": "GAIP-VOUCHER-08",
+      "status": "EXPIRED",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/MZP2-26P9-095X-13W9.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/MZP2-26P9-095X-13W9.png",
+      "paymentUrl": "https://app.buatqris.site/trx/MZP2-26P9-095X-13W9",
+      "customerName": "Pelanggan 6789",
+      "customerPhone": "08123456789",
+      "createdAt": "2026-09-12T18:25:57.115Z",
+      "expiresAt": "2026-09-12T19:25:57.000Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-GUR3G",
+      "transactionId": "Q62J-26X5-09MH-133A",
+      "amount": 75042,
+      "voucherId": "GAIP-VOUCHER-09",
+      "status": "EXPIRED",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/Q62J-26X5-09MH-133A.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/Q62J-26X5-09MH-133A.png",
+      "paymentUrl": "https://app.buatqris.site/trx/Q62J-26X5-09MH-133A",
+      "customerName": "Pelanggan 6789",
+      "customerPhone": "08123456789",
+      "createdAt": "2026-09-12T18:27:04.208Z",
+      "expiresAt": "2026-09-12T19:27:04.000Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-YDFS4",
+      "transactionId": "UVZS-26GL-09KC-133V",
+      "amount": 75068,
+      "voucherId": "GAIP-VOUCHER-10",
+      "status": "PENDING",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/UVZS-26GL-09KC-133V.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/UVZS-26GL-09KC-133V.png",
+      "paymentUrl": "https://app.buatqris.site/trx/UVZS-26GL-09KC-133V",
+      "customerName": "Pelanggan 6789",
+      "customerPhone": "08123456789",
+      "createdAt": "2026-09-12T18:28:42.955Z",
+      "expiresAt": "2026-09-12T19:28:41.000Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-69PW9",
+      "transactionId": "TYD3-26WK-09LR-13RD",
+      "amount": 75020,
+      "voucherId": "GAIP-VOUCHER-05",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/TYD3-26WK-09LR-13RD.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/TYD3-26WK-09LR-13RD.png",
+      "paymentUrl": "https://app.buatqris.site/trx/TYD3-26WK-09LR-13RD",
+      "customerName": "Pelanggan 6789",
+      "customerPhone": "08123456789",
+      "createdAt": "2026-09-12T18:32:20.823Z",
+      "expiresAt": "2026-09-12T19:32:12.000Z",
+      "paidAt": "2026-09-12T18:36:28.955Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "provider": "buatqris",
+        "statusCheck": {
+          "transaction_id": "TYD3-26WK-09LR-13RD",
+          "status": "success",
+          "amount": 75000,
+          "total_amount": 75020,
+          "admin_fee": 1725,
+          "credit_amount": 73275,
+          "qris_method": "test",
+          "updated_at": "2026-09-13T01:34:48+07:00"
+        },
+        "paidAt": "2026-09-13T01:34:48+07:00"
       }
     }
   ]

@@ -16,24 +16,10 @@
     <!-- Top Navigation -->
     <header class="top-nav">
       <a href="/" class="brand-logo">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1;">
-          <rect x="3" y="3" width="7" height="7"></rect>
-          <rect x="14" y="3" width="7" height="7"></rect>
-          <rect x="14" y="14" width="7" height="7"></rect>
-          <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-        <span>Buat<span class="accent">Qris</span></span>
-        <span class="brand-badge">Auto-Delivery</span>
+        <div class="store-avatar" style="width: 32px; height: 32px; font-size: 0.85rem; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);">MB</div>
+        <span style="font-weight: 800; letter-spacing: -0.5px; font-size: 1.25rem;">mybro<span class="accent" style="color: #6366f1;">tools</span></span>
+        <span class="brand-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">Official Store</span>
       </a>
-
-      <!-- Countdown Timer Pill in Center -->
-      <div class="timer-pill" id="timerPill">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span id="timerText">-- : --</span>
-      </div>
 
       <!-- Theme Switcher -->
       <button class="theme-switch" id="themeToggle" title="Ganti Tema">
@@ -130,8 +116,8 @@
               <div class="countdown-sync-note">Waktu tersinkronisasi otomatis dengan batas waktu resmi BuatQris</div>
             </div>
 
-            <!-- Action Buttons: Bayar Sekarang (Popup) & Buka Tab Baru -->
-            <div class="payment-action-buttons">
+            <!-- Action Button: Bayar Sekarang (Popup) -->
+            <div class="payment-action-buttons" style="margin-bottom: 0;">
               <button class="btn-pay-now" id="reopenBqModalBtn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -139,42 +125,12 @@
                 </svg>
                 <span>Bayar Sekarang (Buka Popup)</span>
               </button>
-              
-              <a href="#" target="_blank" rel="noopener noreferrer" class="btn-open-external" id="openExternalTrxBtn">
-                <span>↗ Buka di Tab Baru / Aplikasi Bank</span>
-              </a>
             </div>
 
-            <div class="qris-header-badge" style="margin-top: 10px;">
-              <span style="font-weight: 800; font-size: 1.05rem; letter-spacing: 0.5px; color: #dc2626;">QRIS</span>
-              <span style="font-size: 0.72rem; margin-left: 6px; font-weight: 700; color: #64748b;">Standar Pembayaran Nasional</span>
-            </div>
-
-            <div class="qr-code-frame">
-              <img id="qrisImage" src="" alt="QRIS Code Dinamis">
-            </div>
-
-            <div class="qris-instructions">
-              Buka aplikasi m-Banking atau e-Wallet Anda, lalu scan kode QR di atas untuk menyelesaikan pembayaran.
-            </div>
-
-            <div class="supported-wallets">
-              <span class="wallet-chip">BCA</span>
-              <span class="wallet-chip">Mandiri</span>
-              <span class="wallet-chip">BRI</span>
-              <span class="wallet-chip">BNI</span>
-              <span class="wallet-chip">GoPay</span>
-              <span class="wallet-chip">DANA</span>
-              <span class="wallet-chip">OVO</span>
-              <span class="wallet-chip">ShopeePay</span>
-            </div>
-
-            <!-- Testing Helper / Simulator Trigger -->
-            <div style="margin-top: 10px;">
-              <button class="sim-trigger-btn" id="simulatePayBtn" title="Klik untuk simulasi bayar instan">
-                ⚡ <span>Simulasikan Bayar Berhasil (Sandbox Test)</span>
-              </button>
-            </div>
+            <!-- Hidden simulator trigger for testing -->
+            <button class="sim-trigger-btn" id="simulatePayBtn" style="display: none;" title="Klik untuk simulasi bayar instan">
+              ⚡ <span>Simulasikan Bayar Berhasil (Sandbox Test)</span>
+            </button>
           </div>
 
           <!-- State B: Success Notification & Voucher Delivery (PAID - Matches Reference Screenshot) -->
@@ -210,14 +166,6 @@
               <!-- Main Claim CTA Button -->
               <a href="#" target="_blank" rel="noopener noreferrer" class="claim-cta-btn" id="claimVoucherBtn">
                 🚀 KLAIM VOUCHER GOOGLE AI PRO
-              </a>
-
-              <!-- WhatsApp Receipt & Thank You Direct Button -->
-              <a href="#" target="_blank" rel="noopener noreferrer" class="wa-receipt-btn" id="waReceiptBtn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.077-2.023-.473-1.613-.668-2.654-2.316-2.734-2.423-.081-.107-.655-.872-.655-1.662 0-.79.414-1.18.561-1.341.144-.162.315-.203.42-.203.104 0 .209.002.301.007.097.005.228-.037.357.274.132.318.452 1.103.492 1.185.04.082.067.178.013.285-.053.107-.08.174-.16.268-.08.094-.168.21-.24.282-.08.08-.163.167-.07.327.094.16.417.688.895 1.114.615.548 1.134.718 1.294.798.16.08.254.067.348-.04.094-.107.4-.467.507-.627.107-.16.214-.134.361-.08.147.053.936.441 1.096.521.16.08.267.12.307.187.04.067.04.387-.104.792z"/>
-                </svg>
-                <span>Buka Struk di WhatsApp Saya</span>
               </a>
 
               <!-- Copy Link Button -->
@@ -339,39 +287,6 @@
               <div class="time-value" id="displayTime">--</div>
             </div>
           </div>
-
-          <!-- Action Buttons -->
-          <div class="action-row">
-            <button class="btn-secondary" id="shareBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-              </svg>
-              Bagikan
-            </button>
-
-            <button class="btn-success" id="downloadStrukBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              Download Struk
-            </button>
-          </div>
-
-          <!-- Purple Check Status Button -->
-          <button class="btn-purple-primary" id="manualCheckBtn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <polyline points="1 20 1 14 7 14"></polyline>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-            Cek Status Pembayaran
-          </button>
 
           <!-- Auto-update indicator -->
           <div class="auto-update-indicator">

@@ -12,25 +12,28 @@ function formatWhatsAppNumber(phone) {
   return cleaned;
 }
 
-function buildPaymentInstructionMessage({ orderId, buyerName, total, paymentUrl, storeName = 'mybrotools' }) {
+function buildPaymentInstructionMessage({ orderId, buyerName, total, paymentUrl, orderWebUrl, storeName = 'mybrotools' }) {
+  const webUrl = orderWebUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/?order=${orderId}`;
   return `Halo Kak ${buyerName || 'Pelanggan'}! 👋
 
 Terima kasih telah memesan *Voucher Google AI Pro* di *${storeName}* ✨
 
-Berikut adalah link pembayaran QRIS resmi pesanan Anda:
+Berikut adalah link pesanan & pembayaran resmi Anda:
 
 📋 *RINCIAN PESANAN:*
 • No. Pesanan   : ${orderId}
 • Total Tagihan : Rp ${Number(total).toLocaleString('id-ID')}
 • Status        : MENUNGGU PEMBAYARAN ⏳
 
-🔗 *LINK PEMBAYARAN QRIS RESMI:*
+🌐 *LINK HALAMAN PESANAN & VOUCHER ANDA:*
+${webUrl}
+
+🔗 *LINK PEMBAYARAN QRIS (BuatQris):*
 ${paymentUrl}
 
 💡 *PANDUAN:*
-1. Buka link di atas pada HP Anda atau scan QRIS yang tampil di layar.
-2. Selesaikan pembayaran menggunakan m-Banking atau e-Wallet apa pun (BCA, Mandiri, BRI, BNI, GoPay, DANA, OVO, ShopeePay, dll).
-3. Begitu pembayaran berhasil, link klaim voucher Google AI Pro resmi akan *otomatis terkirim ke WhatsApp Anda* detik itu juga!
+1. Selesaikan pembayaran melalui link QRIS di atas atau scan QRIS yang tampil di layar.
+2. Link halaman pesanan Anda (${webUrl}) akan *otomatis berubah menjadi halaman klaim voucher Google AI Pro* begitu pembayaran Anda terverifikasi lunas!
 
 Jika butuh bantuan, silakan langsung balas pesan ini ya Kak. Terima kasih! 🙏`;
 }
@@ -69,7 +72,7 @@ function generateWaLink({ phone, message }) {
 /**
  * Send WhatsApp payment instruction link automatically via Baileys (primary) or Fonnte (fallback)
  */
-async function sendPaymentInstructionNotification({ phone, orderId, buyerName, total, paymentUrl, storeName = 'mybrotools' }) {
+async function sendPaymentInstructionNotification({ phone, orderId, buyerName, total, paymentUrl, orderWebUrl, storeName = 'mybrotools' }) {
   const formattedPhone = formatWhatsAppNumber(phone);
   if (!formattedPhone) return { success: false, reason: 'No phone number' };
 
@@ -78,6 +81,7 @@ async function sendPaymentInstructionNotification({ phone, orderId, buyerName, t
     buyerName,
     total,
     paymentUrl,
+    orderWebUrl,
     storeName
   });
 

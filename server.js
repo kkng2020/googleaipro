@@ -147,14 +147,16 @@ app.post('/api/order/create', async (req, res) => {
       provider: provider.name
     });
 
-    // Send Payment Link to Customer WhatsApp simultaneously
+    // Send Payment Link & Order Web URL to Customer WhatsApp simultaneously
     if (paymentResult.paymentUrl) {
+      const orderWebUrl = `${BASE_URL}/?order=${order.id}`;
       sendPaymentInstructionNotification({
         phone: order.customerPhone,
         orderId: order.id,
         buyerName: order.customerName,
         total: order.amount,
         paymentUrl: paymentResult.paymentUrl,
+        orderWebUrl,
         storeName: stockInfo.settings.merchantName || 'mybrotools'
       }).catch(err => console.error('WA payment link dispatch error:', err.message));
     }

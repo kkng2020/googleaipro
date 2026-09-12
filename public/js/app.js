@@ -194,7 +194,8 @@ function renderOrderView(order) {
     document.getElementById('qrisBox').style.display = 'flex';
     document.getElementById('successBox').style.display = 'none';
     if (order.qrCodeUrl) {
-      document.getElementById('qrisImage').src = order.qrCodeUrl;
+      const qrisImg = document.getElementById('qrisImage');
+      if (qrisImg) qrisImg.src = order.qrCodeUrl;
     }
 
     document.getElementById('statusAlertBox').className = 'status-alert-box pending';
@@ -233,18 +234,20 @@ function renderSuccessState(order) {
     claimBtn.onclick = null;
   }
 
-  // Setup WhatsApp Receipt Link
+  // Setup WhatsApp Receipt Link (if present in DOM)
   const waBtn = document.getElementById('waReceiptBtn');
-  if (order.waLink) {
-    waBtn.href = order.waLink;
-    waBtn.style.display = 'flex';
-  } else {
-    const historyUrl = `${window.location.origin}/?order=${order.orderId || order.id}`;
-    const defaultMsg = `Halo! Terima kasih telah membeli Voucher Google AI Pro 🎉\n\nNo. Pesanan: ${order.orderId || order.id}\nStatus: Lunas\nLink Klaim: ${order.voucherUrl}\nHistory: ${historyUrl}`;
-    const cleanPhone = (order.customerPhone || '').replace(/[^0-9]/g, '');
-    const intlPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
-    waBtn.href = `https://wa.me/${intlPhone}?text=${encodeURIComponent(defaultMsg)}`;
-    waBtn.style.display = 'flex';
+  if (waBtn) {
+    if (order.waLink) {
+      waBtn.href = order.waLink;
+      waBtn.style.display = 'flex';
+    } else {
+      const historyUrl = `${window.location.origin}/?order=${order.orderId || order.id}`;
+      const defaultMsg = `Halo! Terima kasih telah membeli Voucher Google AI Pro 🎉\n\nNo. Pesanan: ${order.orderId || order.id}\nStatus: Lunas\nLink Klaim: ${order.voucherUrl}\nHistory: ${historyUrl}`;
+      const cleanPhone = (order.customerPhone || '').replace(/[^0-9]/g, '');
+      const intlPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+      waBtn.href = `https://wa.me/${intlPhone}?text=${encodeURIComponent(defaultMsg)}`;
+      waBtn.style.display = 'flex';
+    }
   }
 
   const copyBtn = document.getElementById('copyVoucherBtn');
@@ -476,11 +479,11 @@ async function checkUrlParams() {
 document.addEventListener('DOMContentLoaded', () => {
   setupThemeToggle();
 
-  document.getElementById('startBuyBtn').addEventListener('click', handleCreateOrder);
-  document.getElementById('simulatePayBtn').addEventListener('click', handleSimulatePay);
-  document.getElementById('manualCheckBtn').addEventListener('click', handleManualCheck);
-  document.getElementById('downloadStrukBtn').addEventListener('click', handleDownloadStruk);
-  document.getElementById('shareBtn').addEventListener('click', handleShare);
+  document.getElementById('startBuyBtn')?.addEventListener('click', handleCreateOrder);
+  document.getElementById('simulatePayBtn')?.addEventListener('click', handleSimulatePay);
+  document.getElementById('manualCheckBtn')?.addEventListener('click', handleManualCheck);
+  document.getElementById('downloadStrukBtn')?.addEventListener('click', handleDownloadStruk);
+  document.getElementById('shareBtn')?.addEventListener('click', handleShare);
 
   // BuatQris Popup Close Button (Instant close without blocking confirm)
   document.getElementById('closeBqModalBtn')?.addEventListener('click', () => {
@@ -490,6 +493,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Close when clicking overlay backdrop outside modal
   document.getElementById('bqModalOverlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'bqModalOverlay') {
+      closeBuatQrisModal();
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
       closeBuatQrisModal();
     }
   });
