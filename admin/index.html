@@ -1197,12 +1197,13 @@
           const qrImg = document.getElementById('waQrImage');
           const logoutBtn = document.getElementById('waLogoutBtn');
 
-          if (status === 'connected') {
+          const st = (status || '').toLowerCase();
+          if (st === 'connected') {
             badge.className = 'wa-status-badge connected';
             badge.innerHTML = `🟢 Terhubung: +${connectedNumber || '628xxx'}`;
             qrBox.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
-          } else if (status === 'waiting_qr') {
+          } else if (st === 'scan_qr' || st === 'waiting_qr' || qrCodeUrl) {
             badge.className = 'wa-status-badge waiting';
             badge.innerHTML = `🟡 Menunggu Scan QR`;
             if (qrCodeUrl) {
