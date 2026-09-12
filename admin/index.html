@@ -230,6 +230,57 @@
       cursor: text;
     }
 
+    /* Icon-Only Buttons */
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 8px !important;
+      font-size: 0.95rem !important;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      line-height: 1;
+      text-decoration: none;
+    }
+    .btn-icon:hover {
+      transform: scale(1.08);
+    }
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast-msg.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
     /* Lock Badge & Notice */
     .locked-card-notice {
       background: rgba(99, 102, 241, 0.08);
@@ -599,6 +650,23 @@
     </div>
   </div>
 
+  <!-- MODAL: KONFIRMASI HAPUS VOUCHER -->
+  <div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 390px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 12px;">🗑️</div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;">Hapus Voucher?</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+        Apakah Anda yakin ingin menghapus voucher <strong id="deleteTargetId" style="color: #ef4444; font-family: monospace;">-</strong> dari daftar stok siap jual?
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn btn-outline" onclick="closeDeleteModal()" style="flex: 1;">Batal</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="executeDeleteVoucher()" style="flex: 1;">
+          🗑️ Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let allVouchers = [];
     let availableVouchers = [];
@@ -751,19 +819,19 @@
                         onkeydown="if(event.key==='Enter') commitEditVoucher('${v.id}'); if(event.key==='Escape') cancelEditVoucher('${v.id}');"
                       >
                     </div>
-                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${v.url || ''}')" title="Salin Link">📋</button>
+                    <button class="btn btn-outline btn-icon" onclick="copyToClipboard('${v.url || ''}')" title="Salin Link">📋</button>
                     <span id="testlink-wrap-${v.id}">
-                      ${v.url ? `<a id="testlink-${v.id}" href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>` : ''}
+                      ${v.url ? `<a id="testlink-${v.id}" href="${v.url}" target="_blank" class="btn btn-outline btn-icon" title="Buka URL">↗</a>` : ''}
                     </span>
                   </div>
                 </td>
                 <td style="text-align: center;">
                   <div id="actions-${v.id}" style="display: flex; gap: 6px; justify-content: center; align-items: center;">
-                    <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${v.id}')" title="Buka Edit Link">
-                      ✏️ Edit
+                    <button class="btn btn-outline btn-icon" onclick="startEditVoucher('${v.id}')" title="Edit Link Voucher">
+                      ✏️
                     </button>
-                    <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${v.id}')" title="Hapus Voucher ini">
-                      🗑 Hapus
+                    <button class="btn btn-danger btn-icon" onclick="promptDeleteVoucher('${v.id}')" title="Hapus Voucher ini">
+                      🗑️
                     </button>
                   </div>
                 </td>
@@ -808,8 +876,8 @@
                       <span style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         ${v.url || '-'}
                       </span>
-                      <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${v.url}')" title="Salin Link">📋</button>
-                      ${v.url ? `<a href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka Link">↗</a>` : ''}
+                      <button class="btn btn-outline btn-icon" onclick="copyToClipboard('${v.url}')" title="Salin Link">📋</button>
+                      ${v.url ? `<a href="${v.url}" target="_blank" class="btn btn-outline btn-icon" title="Buka Link">↗</a>` : ''}
                     </div>
                   </td>
                   <td style="font-size: 0.78rem; color: var(--text-muted);">
@@ -901,10 +969,33 @@
       }
     }
 
-    async function handleDeleteVoucher(voucherId) {
-      if (!confirm(`Yakin ingin menghapus voucher ${voucherId} dari stok siap jual?`)) {
-        return;
-      }
+    // -------------------------------------------------------------
+    // Delete Voucher Modal & Execution
+    // -------------------------------------------------------------
+    let pendingDeleteVoucherId = null;
+
+    function promptDeleteVoucher(voucherId) {
+      pendingDeleteVoucherId = voucherId;
+      document.getElementById('deleteTargetId').innerText = voucherId;
+      const btn = document.getElementById('confirmDeleteBtn');
+      btn.disabled = false;
+      btn.innerHTML = '🗑️ Hapus';
+      document.getElementById('deleteConfirmModal').style.display = 'flex';
+      btn.focus();
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteConfirmModal').style.display = 'none';
+      pendingDeleteVoucherId = null;
+    }
+
+    async function executeDeleteVoucher() {
+      if (!pendingDeleteVoucherId) return;
+
+      const voucherId = pendingDeleteVoucherId;
+      const btn = document.getElementById('confirmDeleteBtn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Menghapus...';
 
       try {
         const res = await fetch(`/api/admin/vouchers/${voucherId}`, {
@@ -916,18 +1007,36 @@
 
         const data = await res.json();
         if (data.success) {
-          alert(`✅ ${data.message}`);
-          loadAdminData();
+          closeDeleteModal();
+          showToast(`✅ Voucher ${voucherId} berhasil dihapus!`);
+
+          // Animate row removal immediately
+          const row = document.getElementById(`row-${voucherId}`);
+          if (row) {
+            row.style.transition = 'all 0.25s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              row.remove();
+              loadAdminData();
+            }, 250);
+          } else {
+            loadAdminData();
+          }
         } else {
-          alert(`❌ Gagal menghapus: ${data.error || 'Terjadi kesalahan'}`);
+          showToast(`❌ Gagal menghapus: ${data.error || 'Terjadi kesalahan'}`);
+          btn.disabled = false;
+          btn.innerHTML = '🗑️ Hapus';
         }
       } catch (err) {
-        alert(`❌ Gagal menghapus: ${err.message}`);
+        showToast(`❌ Gagal menghapus: ${err.message}`);
+        btn.disabled = false;
+        btn.innerHTML = '🗑️ Hapus';
       }
     }
 
     // -------------------------------------------------------------
-    // Edit & Commit Single Voucher Link Handlers
+    // Edit & Commit Single Voucher Link Handlers (Icon Only)
     // -------------------------------------------------------------
     function startEditVoucher(id) {
       const input = document.getElementById(`input-${id}`);
@@ -942,11 +1051,11 @@
       input.select();
 
       actionsDiv.innerHTML = `
-        <button class="btn btn-success btn-sm" id="btn-save-${id}" onclick="commitEditVoucher('${id}')" title="Commit Simpan Perubahan">
-          💾 Simpan
+        <button class="btn btn-success btn-icon" id="btn-save-${id}" onclick="commitEditVoucher('${id}')" title="Simpan Perubahan">
+          💾
         </button>
-        <button class="btn btn-outline btn-sm" onclick="cancelEditVoucher('${id}')" title="Batal Edit">
-          ✖ Batal
+        <button class="btn btn-outline btn-icon" onclick="cancelEditVoucher('${id}')" title="Batal Edit">
+          ✖
         </button>
       `;
     }
@@ -963,11 +1072,11 @@
       input.classList.add('locked');
 
       actionsDiv.innerHTML = `
-        <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${id}')" title="Buka Edit Link">
-          ✏️ Edit
+        <button class="btn btn-outline btn-icon" onclick="startEditVoucher('${id}')" title="Edit Link Voucher">
+          ✏️
         </button>
-        <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${id}')" title="Hapus Voucher ini">
-          🗑 Hapus
+        <button class="btn btn-danger btn-icon" onclick="promptDeleteVoucher('${id}')" title="Hapus Voucher ini">
+          🗑️
         </button>
       `;
     }
@@ -980,14 +1089,14 @@
 
       const newUrl = input.value.trim();
       if (!newUrl) {
-        alert('URL promo voucher tidak boleh kosong!');
+        showToast('⚠️ URL promo voucher tidak boleh kosong!');
         input.focus();
         return;
       }
 
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerText = 'Menyimpan...';
+        saveBtn.innerHTML = '⏳';
       }
 
       try {
@@ -1012,17 +1121,17 @@
           // Update test link href
           const wrap = document.getElementById(`testlink-wrap-${id}`);
           if (wrap) {
-            wrap.innerHTML = `<a id="testlink-${id}" href="${newUrl}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>`;
+            wrap.innerHTML = `<a id="testlink-${id}" href="${newUrl}" target="_blank" class="btn btn-outline btn-icon" title="Buka URL">↗</a>`;
           }
 
           // Restore actions
           if (actionsDiv) {
             actionsDiv.innerHTML = `
-              <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${id}')" title="Buka Edit Link">
-                ✏️ Edit
+              <button class="btn btn-outline btn-icon" onclick="startEditVoucher('${id}')" title="Edit Link Voucher">
+                ✏️
               </button>
-              <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${id}')" title="Hapus Voucher ini">
-                🗑 Hapus
+              <button class="btn btn-danger btn-icon" onclick="promptDeleteVoucher('${id}')" title="Hapus Voucher ini">
+                🗑️
               </button>
             `;
           }
@@ -1033,21 +1142,45 @@
           const avObj = availableVouchers.find(v => v.id === id);
           if (avObj) avObj.url = newUrl;
 
-          alert(`✅ Link voucher ${id} berhasil diperbarui & disimpan!`);
+          showToast(`✅ Link voucher ${id} berhasil disimpan!`);
         } else {
-          alert(`❌ Gagal menyimpan: ${data.error || 'Terjadi kesalahan'}`);
+          showToast(`❌ Gagal menyimpan: ${data.error || 'Terjadi kesalahan'}`);
           if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerText = '💾 Simpan';
+            saveBtn.innerHTML = '💾';
           }
         }
       } catch (err) {
-        alert(`❌ Error: ${err.message}`);
+        showToast(`❌ Error: ${err.message}`);
         if (saveBtn) {
           saveBtn.disabled = false;
-          saveBtn.innerText = '💾 Simpan';
+          saveBtn.innerHTML = '💾';
         }
       }
+    }
+
+    // Toast Notification Helper
+    function showToast(msg) {
+      let toast = document.getElementById('toastMsg');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastMsg';
+        toast.className = 'toast-msg';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Copy to clipboard helper
+    function copyToClipboard(text) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Link voucher berhasil disalin!');
+      });
     }
 
     async function checkWhatsAppStatus() {
@@ -1060,22 +1193,22 @@
         if (json.success) {
           const { status, connectedNumber, qrCodeUrl } = json.data;
           const badge = document.getElementById('waStatusBadge');
-          const desc = document.getElementById('waStatusDesc');
           const qrBox = document.getElementById('waQrContainer');
+          const qrImg = document.getElementById('waQrImage');
           const logoutBtn = document.getElementById('waLogoutBtn');
 
-          if (status === 'CONNECTED') {
+          if (status === 'connected') {
             badge.className = 'wa-status-badge connected';
-            badge.innerHTML = `✅ WhatsApp Terhubung (+${connectedNumber}) - mybrotools`;
-            desc.innerHTML = `Bot aktif: Otomatis mengirimkan link voucher & struk ke WhatsApp pembeli begitu pembayaran lunas.`;
+            badge.innerHTML = `🟢 Terhubung: +${connectedNumber || '628xxx'}`;
             qrBox.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
-          } else if (status === 'SCAN_QR' && qrCodeUrl) {
+          } else if (status === 'waiting_qr') {
             badge.className = 'wa-status-badge waiting';
-            badge.innerHTML = `⚠️ Perlu Scan QR WhatsApp`;
-            desc.innerHTML = `Buka WhatsApp di HP Anda > Perangkat Tertaut > Tautkan Perangkat, lalu scan QR Code di sebelah kanan:`;
-            qrBox.style.display = 'block';
-            document.getElementById('waQrImage').src = qrCodeUrl;
+            badge.innerHTML = `🟡 Menunggu Scan QR`;
+            if (qrCodeUrl) {
+              qrImg.src = qrCodeUrl;
+              qrBox.style.display = 'block';
+            }
             logoutBtn.style.display = 'none';
           } else {
             badge.className = 'wa-status-badge waiting';
@@ -1097,21 +1230,32 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert('Sesi WhatsApp diputuskan. Silakan scan ulang jika ingin menghubungkan lagi.');
+          showToast('Sesi WhatsApp diputuskan. Silakan scan ulang jika ingin menghubungkan lagi.');
           checkWhatsAppStatus();
         }
       }
     });
 
-    // Close modal on Escape
+    // Close modals on Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeAddVoucherModal();
+        closeDeleteModal();
+      }
+    });
+
+    // Close delete modal on backdrop click
+    document.getElementById('deleteConfirmModal').addEventListener('click', (e) => {
+      if (e.target.id === 'deleteConfirmModal') {
+        closeDeleteModal();
       }
     });
 
     // Initialize Auth Check
     checkAuth();
   </script>
+
+  <!-- Toast Element -->
+  <div id="toastMsg" class="toast-msg"></div>
 </body>
 </html>

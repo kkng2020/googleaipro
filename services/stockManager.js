@@ -623,29 +623,57 @@ class StockManager {
 
   static async deleteVoucher(voucherId) {
     const localData = readData();
-    const idx = localData.vouchers.findIndex(v => v.id === voucherId);
-
-    if (idx === -1) {
-      throw new Error(`Voucher ${voucherId} tidak ditemukan`);
-    }
-
-    const voucher = localData.vouchers[idx];
-
-    // Strict lock: SOLD vouchers cannot be deleted
-    if (voucher.status === 'SOLD') {
-      throw new Error(`Voucher ${voucherId} sudah terjual kepada pelanggan dan terkunci permanen, tidak boleh dihapus!`);
-    }
-
-    if (voucher.status === 'LOCKED') {
-      throw new Error(`Voucher ${voucherId} sedang di-hold untuk pesanan yang sedang berjalan. Tunggu hingga selesai atau kadaluarsa.`);
-    }
-
-    localData.vouchers.splice(idx, 1);
-    writeData(localData);
+    let voucher = null;
 
     if (isConfigured()) {
       try {
-        await supabase.from('vouchers').delete().eq('id', voucherId);
+        const { data: dbVoucher } = await supabase
+          .from('vouchers')
+          .select('*')
+          .eq('id', voucherId)
+          .maybeSingle();
+
+        if (dbVoucher) {
+          voucher = {
+            id: dbVoucher.id,
+            url: dbVoucher.url,
+            status: dbVoucher.status
+          };
+        }
+      } catch (err) {
+        console.error('Supabase check voucher error:', err.message);
+      }
+    }
+
+    const idx = localData.vouchers.findIndex(v => v.id === voucherId);
+    if (!voucher && idx !== -1) {
+      voucher = localData.vouchers[idx];
+    }
+
+    if (!voucher && idx === -1) {
+      throw new Error(`Voucher ${voucherId} tidak ditemukan`);
+    }
+
+    // Strict lock: SOLD vouchers cannot be deleted
+    if (voucher && voucher.status === 'SOLD') {
+      throw new Error(`Voucher ${voucherId} sudah terjual kepada pelanggan dan terkunci permanen, tidak boleh dihapus!`);
+    }
+
+    if (voucher && voucher.status === 'LOCKED') {
+      throw new Error(`Voucher ${voucherId} sedang di-hold untuk pesanan yang sedang berjalan. Tunggu hingga selesai atau kadaluarsa.`);
+    }
+
+    if (idx !== -1) {
+      localData.vouchers.splice(idx, 1);
+      writeData(localData);
+    }
+
+    if (isConfigured()) {
+      try {
+        const { error } = await supabase.from('vouchers').delete().eq('id', voucherId);
+        if (error) {
+          console.error('Supabase delete error:', error.message);
+        }
       } catch (err) {
         console.error('Supabase deleteVoucher error:', err.message);
       }
