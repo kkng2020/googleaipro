@@ -60,13 +60,26 @@ class BaileysService {
 
         if (connection === 'close') {
           const statusCode = lastDisconnect?.error?.output?.statusCode;
-          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+          const isSessionInvalid = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 440;
           this.status = 'DISCONNECTED';
           this.connectedNumber = null;
-          console.log(`⚠️ WhatsApp terputus (status: ${statusCode}). Reconnecting: ${shouldReconnect}`);
+          console.log(`⚠️ WhatsApp terputus (status: ${statusCode}).`);
 
-          if (shouldReconnect && this.retryCount < 10) {
+          if (isSessionInvalid) {
+            console.log(`🔄 Sesi WhatsApp telah kedaluwarsa atau diganti (status ${statusCode}). Mereset sesi untuk memunculkan QR Code baru...`);
+            if (fs.existsSync(AUTH_DIR)) {
+              try {
+                fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+              } catch (e) {}
+            }
+            this.retryCount = 0;
+            setTimeout(() => this.init(), 2000);
+            return;
+          }
+
+          if (this.retryCount < 5) {
             this.retryCount++;
+            console.log(`⏳ Mencoba menyambung kembali (${this.retryCount}/5)...`);
             setTimeout(() => this.init(), 5000);
           }
         } else if (connection === 'open') {
