@@ -62,6 +62,37 @@ class StockManager {
               updated_at: new Date().toISOString()
             })
             .eq('id', v.id);
+          console.log(`[StockManager] Voucher #${v.id} unlocked back to AVAILABLE (timeout).`);
+        }
+      }
+
+      // 2. Also check any PENDING orders whose expires_at is past nowIso
+      const { data: expiredOrders, error: ordErr } = await client
+        .from('orders')
+        .select('*')
+        .eq('status', 'PENDING')
+        .lt('expires_at', nowIso);
+
+      if (!ordErr && expiredOrders && expiredOrders.length > 0) {
+        for (const ord of expiredOrders) {
+          await client
+            .from('orders')
+            .update({ status: 'EXPIRED' })
+            .eq('id', ord.id);
+
+          await client
+            .from('vouchers')
+            .update({
+              status: 'AVAILABLE',
+              locked_until: null,
+              order_id: null,
+              buyer_name: null,
+              buyer_phone: null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('order_id', ord.id)
+            .eq('status', 'LOCKED');
+          console.log(`[StockManager] Order #${ord.id} marked as EXPIRED & voucher released.`);
         }
       }
     } catch (err) {
@@ -98,7 +129,7 @@ class StockManager {
       fee: 0,
       currency: 'Rp',
       merchantName: 'mybrotools',
-      orderTimeoutMinutes: 10,
+      orderTimeoutMinutes: 5,
       supportContact: 'https://wa.me/'
     };
   }
@@ -163,7 +194,8 @@ class StockManager {
     await this.cleanupExpiredLocks();
     const client = ensureSupabase();
     const settings = await this.getSettings();
-    const timeoutMs = (settings.orderTimeoutMinutes || 10) * 60 * 1000;
+    const timeoutMinutes = Number(settings.orderTimeoutMinutes) || 5;
+    const timeoutMs = timeoutMinutes * 60 * 1000;
     const lockExpiry = Date.now() + timeoutMs;
     const lockExpiryIso = new Date(lockExpiry).toISOString();
 
@@ -209,9 +241,7 @@ class StockManager {
       orderData.customerPhone
     );
 
-    const expiresIso = orderData.expiresAt
-      ? new Date(orderData.expiresAt).toISOString()
-      : new Date(lockResult.lockedUntil).toISOString();
+    const expiresIso = new Date(lockResult.lockedUntil).toISOString();
 
     const newOrder = {
       id: orderData.id,
@@ -282,6 +312,32 @@ class StockManager {
     }
     if (!dbOrder) return null;
 
+    // Check if pending order has passed its 5-minute expiration
+    if (dbOrder.status === 'PENDING' && dbOrder.expires_at) {
+      const isPastExpiry = Date.now() > new Date(dbOrder.expires_at).getTime();
+      if (isPastExpiry) {
+        dbOrder.status = 'EXPIRED';
+        await client
+          .from('orders')
+          .update({ status: 'EXPIRED' })
+          .eq('id', dbOrder.id);
+
+        await client
+          .from('vouchers')
+          .update({
+            status: 'AVAILABLE',
+            locked_until: null,
+            order_id: null,
+            buyer_name: null,
+            buyer_phone: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('order_id', dbOrder.id)
+          .eq('status', 'LOCKED');
+        console.log(`[StockManager] Order ${dbOrder.id} expired on fetch and voucher released.`);
+      }
+    }
+
     let voucherUrl = dbOrder.voucher_url;
     let voucherId = dbOrder.raw_data?.voucherId || null;
 
@@ -318,6 +374,44 @@ class StockManager {
       isPaid: dbOrder.status === 'PAID',
       isExpired: dbOrder.status === 'EXPIRED'
     };
+  }
+
+  /**
+   * Manually or Webhook triggers an order expiration and immediately releases the locked voucher
+   */
+  static async markAsExpired(orderIdOrTrxId) {
+    const client = ensureSupabase();
+
+    const { data: dbOrder, error } = await client
+      .from('orders')
+      .select('*')
+      .or(`id.eq.${orderIdOrTrxId},raw_data->>transactionId.eq.${orderIdOrTrxId}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !dbOrder) return null;
+    if (dbOrder.status === 'PAID') return dbOrder;
+
+    await client
+      .from('orders')
+      .update({ status: 'EXPIRED' })
+      .eq('id', dbOrder.id);
+
+    await client
+      .from('vouchers')
+      .update({
+        status: 'AVAILABLE',
+        locked_until: null,
+        order_id: null,
+        buyer_name: null,
+        buyer_phone: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('order_id', dbOrder.id)
+      .eq('status', 'LOCKED');
+
+    console.log(`[StockManager] Order ${dbOrder.id} marked as EXPIRED & voucher released.`);
+    return { ...dbOrder, status: 'EXPIRED' };
   }
 
   /**

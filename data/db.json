@@ -5,7 +5,7 @@
     "fee": 0,
     "currency": "Rp",
     "merchantName": "mybrotools",
-    "orderTimeoutMinutes": 10,
+    "orderTimeoutMinutes": 5,
     "supportContact": "https://wa.me/"
   },
   "vouchers": [

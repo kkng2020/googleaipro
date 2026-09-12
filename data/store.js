@@ -27,8 +27,8 @@ const defaultState = () => {
       fee: 0,
       currency: 'Rp',
       merchantName: 'mybrotools',
-      orderTimeoutMinutes: 10,
-      baseUrl: 'http://localhost:3000'
+      orderTimeoutMinutes: 5,
+      baseUrl: 'https://mybrotool.vercel.app'
     },
     vouchers: defaultVouchers,
     orders: []

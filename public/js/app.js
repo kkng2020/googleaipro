@@ -111,7 +111,7 @@ function parseBuatQrisDate(dateStr) {
   }
 
   const parsedGeneral = Date.parse(clean);
-  return isNaN(parsedGeneral) ? Date.now() + 15 * 60 * 1000 : parsedGeneral;
+  return isNaN(parsedGeneral) ? Date.now() + 5 * 60 * 1000 : parsedGeneral;
 }
 
 function startCountdown(expiresAt) {
@@ -143,7 +143,20 @@ function startCountdown(expiresAt) {
         alertBox.style.color = '#dc2626';
       }
       const alertText = document.getElementById('statusAlertText');
-      if (alertText) alertText.innerText = 'Waktu pembayaran telah habis. Silakan buat pesanan baru.';
+      if (alertText) alertText.innerText = 'Waktu pembayaran (5 menit) telah habis. Voucher telah dibuka kembali. Silakan buat pesanan baru.';
+
+      closeBuatQrisModal();
+      const reopenBtn = document.getElementById('reopenBqModalBtn');
+      if (reopenBtn) {
+        reopenBtn.innerHTML = '<span>🔄 Buat Pesanan Baru</span>';
+        reopenBtn.onclick = () => { window.location.href = '/'; };
+      }
+
+      // Notify backend to mark order as EXPIRED and release voucher immediately
+      if (currentOrder) {
+        const orderId = currentOrder.orderId || currentOrder.id;
+        fetch(`/api/order/${orderId}`).catch(() => {});
+      }
       return;
     }
 
@@ -190,6 +203,8 @@ function renderOrderView(order) {
   if (order.status === 'PAID') {
     closeBuatQrisModal();
     renderSuccessState(order);
+  } else if (order.status === 'EXPIRED') {
+    renderExpiredState(order);
   } else {
     document.getElementById('qrisBox').style.display = 'flex';
     document.getElementById('successBox').style.display = 'none';
@@ -203,6 +218,40 @@ function renderOrderView(order) {
 
     startCountdown(order.expiresAt);
     startPolling(order.orderId || order.id);
+  }
+}
+
+function renderExpiredState(order) {
+  if (pollInterval) clearInterval(pollInterval);
+  if (countdownInterval) clearInterval(countdownInterval);
+
+  closeBuatQrisModal();
+
+  const timerText = document.getElementById('timerText');
+  if (timerText) {
+    timerText.innerText = '00 : 00';
+    timerText.style.color = '#ef4444';
+  }
+  const timerTextLarge = document.getElementById('timerTextLarge');
+  if (timerTextLarge) {
+    timerTextLarge.innerText = '00 : 00';
+    timerTextLarge.classList.add('warning');
+  }
+
+  const alertBox = document.getElementById('statusAlertBox');
+  if (alertBox) {
+    alertBox.className = 'status-alert-box';
+    alertBox.style.background = '#fef2f2';
+    alertBox.style.borderColor = '#fecaca';
+    alertBox.style.color = '#dc2626';
+  }
+  const alertText = document.getElementById('statusAlertText');
+  if (alertText) alertText.innerText = 'Waktu pembayaran (5 menit) telah habis. Voucher telah dibuka kembali. Silakan buat pesanan baru.';
+
+  const reopenBtn = document.getElementById('reopenBqModalBtn');
+  if (reopenBtn) {
+    reopenBtn.innerHTML = '<span>🔄 Buat Pesanan Baru</span>';
+    reopenBtn.onclick = () => { window.location.href = '/'; };
   }
 }
 
@@ -284,7 +333,7 @@ function startPolling(orderId) {
           clearInterval(pollInterval);
           clearInterval(countdownInterval);
           closeBuatQrisModal();
-          document.getElementById('statusAlertText').innerText = 'Waktu pembayaran telah habis.';
+          renderExpiredState(data.data);
         }
       }
     } catch (e) {

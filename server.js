@@ -67,6 +67,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
+// Periodic background auto-cleanup of expired orders & voucher locks (every 30 seconds)
+setInterval(() => {
+  StockManager.cleanupExpiredLocks().catch(err => console.warn('[Auto-Cleanup] error:', err.message));
+}, 30000);
+
 // Helper Order ID
 function generateOrderId() {
   const date = new Date();
@@ -224,6 +229,13 @@ app.get('/api/order/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Pesanan tidak ditemukan' });
     }
 
+    if (order.status === 'EXPIRED') {
+      return res.json({
+        success: true,
+        data: order
+      });
+    }
+
     // Fallback Active status check with BuatQris (15s throttle per order)
     if (order.status === 'PENDING' && order.provider === 'buatqris' && order.transactionId) {
       const now = Date.now();
@@ -379,6 +391,10 @@ app.post('/api/webhook/buatqris', async (req, res) => {
         historyUrl,
         storeName: 'mybrotools'
       });
+    } else if (event === 'payment.expired' || event === 'payment.failed') {
+      const trxId = req.body?.transaction_id || delivery;
+      console.log(`ℹ️ BuatQris ${event} received for transaction: ${trxId}`);
+      await StockManager.markAsExpired(trxId);
     }
 
     res.status(200).json({ success: true, message: 'Webhook processed' });
