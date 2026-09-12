@@ -1,0 +1,163 @@
+{
+  "settings": {
+    "productName": "Google AI Pro Voucher (Aktivasi Resmi)",
+    "price": 75000,
+    "fee": 0,
+    "currency": "Rp",
+    "merchantName": "mybrotools",
+    "orderTimeoutMinutes": 10,
+    "supportContact": "https://wa.me/"
+  },
+  "vouchers": [
+    {
+      "id": "GAIP-VOUCHER-01",
+      "url": "https://one.google.com/promo/ai-pro-sample-1",
+      "status": "SOLD",
+      "lockedUntil": null,
+      "orderId": "GAIP-260913-5I3RH",
+      "soldAt": "2026-09-12T17:17:37.833Z",
+      "buyerName": "Pelanggan 7890",
+      "buyerContact": "",
+      "buyerPhone": "081234567890"
+    },
+    {
+      "id": "GAIP-VOUCHER-02",
+      "url": "https://one.google.com/promo/ai-pro-sample-2",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-03",
+      "url": "https://one.google.com/promo/ai-pro-sample-3",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-04",
+      "url": "https://one.google.com/promo/ai-pro-sample-4",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-05",
+      "url": "https://one.google.com/promo/ai-pro-sample-5",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-06",
+      "url": "https://one.google.com/promo/ai-pro-sample-6",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-07",
+      "url": "https://one.google.com/promo/ai-pro-sample-7",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-08",
+      "url": "https://one.google.com/promo/ai-pro-sample-8",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-09",
+      "url": "https://one.google.com/promo/ai-pro-sample-9",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    },
+    {
+      "id": "GAIP-VOUCHER-10",
+      "url": "https://one.google.com/promo/ai-pro-sample-10",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerContact": null,
+      "buyerPhone": null
+    }
+  ],
+  "orders": [
+    {
+      "id": "GAIP-260913-X5IHR",
+      "transactionId": "B6CV-26UY-09F3-13CG",
+      "amount": 75700,
+      "voucherId": "GAIP-VOUCHER-01",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/B6CV-26UY-09F3-13CG.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/B6CV-26UY-09F3-13CG.png",
+      "customerName": "Barth",
+      "customerPhone": "081234567890",
+      "createdAt": "2026-09-12T17:16:02.301Z",
+      "expiresAt": "2026-09-12T17:26:02.017Z",
+      "paidAt": "2026-09-12T17:16:09.243Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "method": "SIMULATOR_TEST",
+        "paidAt": "2026-09-12T17:16:09.242Z"
+      }
+    },
+    {
+      "id": "GAIP-260913-5I3RH",
+      "transactionId": "A6L3-26D4-09J5-136T",
+      "amount": 75717,
+      "voucherId": "GAIP-VOUCHER-01",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/A6L3-26D4-09J5-136T.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/A6L3-26D4-09J5-136T.png",
+      "customerName": "Pelanggan 7890",
+      "customerPhone": "081234567890",
+      "createdAt": "2026-09-12T17:17:26.652Z",
+      "expiresAt": "2026-09-12T17:27:26.359Z",
+      "paidAt": "2026-09-12T17:17:37.833Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "method": "SIMULATOR_TEST",
+        "paidAt": "2026-09-12T17:17:37.833Z"
+      }
+    }
+  ]
+}

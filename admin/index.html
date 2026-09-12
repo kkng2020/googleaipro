@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - mybrotools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --primary: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --wa-green: #25d366;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }
+    .container { max-width: 980px; margin: 0 auto; display: none; } /* Hidden until authenticated */
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .nav-links { display: flex; align-items: center; gap: 12px; }
+    .nav-links a { color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.9rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .stat-val { font-size: 1.8rem; font-weight: 800; margin-top: 4px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-muted); font-size: 0.74rem; text-transform: uppercase; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; }
+    .badge.available { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge.locked { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge.sold { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.82rem; }
+    .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-outline:hover { background: var(--border); color: #fff; }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--danger); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.4); }
+    
+    /* WhatsApp Box Styling */
+    .wa-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .wa-qr-box {
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .wa-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .wa-status-badge.connected {
+      background: rgba(37, 211, 102, 0.2);
+      color: #25d366;
+      border: 1px solid rgba(37, 211, 102, 0.4);
+    }
+    .wa-status-badge.waiting {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    /* Auth Gate Overlay */
+    #authOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+    .auth-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .auth-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+    .auth-error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--danger);
+      color: #f87171;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-bottom: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Gate Modal -->
+  <div id="authOverlay">
+    <div class="auth-card">
+      <div style="font-size: 2.2rem; margin-bottom: 10px;">🔐</div>
+      <div class="auth-title">Admin Dashboard</div>
+      <div class="auth-sub">mybrotools • Panel Kelola Voucher</div>
+
+      <div id="authError" class="auth-error"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div style="margin-bottom: 16px; text-align: left;">
+          <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: block;">PASSWORD ADMIN</label>
+          <input type="password" id="adminPasswordInput" placeholder="Masukkan password admin..." style="padding: 12px; font-size: 0.9rem;" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; padding: 12px; font-size: 0.95rem;">Buka Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Admin Dashboard (Unlocked after Auth) -->
+  <div class="container" id="adminContainer">
+    <header>
+      <div>
+        <h1>
+          <span>⚡ mybrotools Admin</span>
+          <span style="font-size: 0.75rem; background: #312e81; color: #c7d2fe; padding: 2px 8px; border-radius: 99px;">Google AI Pro</span>
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Kelola Voucher, Koneksi WhatsApp Baileys & Penjualan</p>
+      </div>
+      <div class="nav-links">
+        <a href="/" target="_blank">↗ Buka Halaman Pembeli</a>
+        <button class="btn btn-outline" onclick="handleLogout()" style="padding: 6px 12px; font-size: 0.8rem;">🔒 Logout</button>
+      </div>
+    </header>
+
+    <!-- WhatsApp Baileys Status Card -->
+    <div class="card" style="border-left: 4px solid var(--wa-green);">
+      <div class="card-title">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.2rem;">📱</span>
+          <span>Status WhatsApp Bot (Baileys - Auto Kirim Link ke Pembeli)</span>
+        </span>
+        <button class="btn btn-danger" id="waLogoutBtn" style="display: none;">Putuskan Sesi WhatsApp</button>
+      </div>
+
+      <div class="wa-card">
+        <div>
+          <div id="waStatusBadge" class="wa-status-badge waiting">
+            <span>● Memeriksa status WhatsApp...</span>
+          </div>
+          <p id="waStatusDesc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; max-width: 480px; line-height: 1.5;">
+            WhatsApp ini akan digunakan server untuk <strong>otomatis mengirim link voucher & history langsung ke nomor pembeli</strong> detik itu juga begitu pembayaran QRIS lunas.
+          </p>
+        </div>
+
+        <div id="waQrContainer" style="display: none; text-align: center;">
+          <div class="wa-qr-box">
+            <img id="waQrImage" src="" alt="Scan QR WhatsApp" style="width: 170px; height: 170px; display: block;">
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">Buka WhatsApp > Perangkat Tertaut > Scan QR</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Voucher Tersedia</div>
+        <div class="stat-val" style="color: var(--success);" id="statAvailable">--</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Sedang Di-Hold</div>
+        <div class="stat-val" style="color: var(--warning);" id="statLocked">--</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Terjual / Lunas</div>
+        <div class="stat-val" style="color: var(--primary);" id="statSold">--</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem;">Total Pendapatan</div>
+        <div class="stat-val" style="color: #38bdf8;" id="statRevenue">Rp 0</div>
+      </div>
+    </div>
+
+    <!-- Voucher Management Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Daftar 10 URL Voucher Google AI Pro</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-danger" id="resetBtn">Reset ke AVAILABLE</button>
+          <button class="btn btn-primary" id="saveVouchersBtn">💾 Simpan Perubahan URL</button>
+        </div>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+        Masukkan 10 URL klaim voucher Google AI Pro milikmu di kolom input berikut, lalu klik <strong>Simpan Perubahan URL</strong> (Tersimpan aman di database Supabase).
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 14%;">Slot</th>
+            <th style="width: 14%;">Status</th>
+            <th style="width: 46%;">URL Klaim Voucher Google AI Pro</th>
+            <th style="width: 26%;">Pembeli (WhatsApp)</th>
+          </tr>
+        </thead>
+        <tbody id="voucherTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Orders History Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Riwayat Pesanan Terbaru</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Waktu</th>
+            <th>WhatsApp Pembeli</th>
+            <th>Nominal</th>
+            <th>Status</th>
+            <th>Voucher Diberikan</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let currentVouchers = [];
+
+    function getAdminToken() {
+      return sessionStorage.getItem('mybrotools_admin_token') || '';
+    }
+
+    function setAdminToken(token) {
+      sessionStorage.setItem('mybrotools_admin_token', token);
+    }
+
+    function clearAdminToken() {
+      sessionStorage.removeItem('mybrotools_admin_token');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('adminPasswordInput').value;
+      const btn = document.getElementById('loginSubmitBtn');
+      const errBox = document.getElementById('authError');
+
+      btn.disabled = true;
+      btn.innerText = 'Memverifikasi...';
+      errBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+
+        if (data.success && data.token) {
+          setAdminToken(data.token);
+          unlockDashboard();
+        } else {
+          errBox.innerText = data.error || 'Password salah!';
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = 'Gagal menghubungi server: ' + err.message;
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Buka Dashboard';
+      }
+    }
+
+    function handleLogout() {
+      clearAdminToken();
+      document.getElementById('authOverlay').style.display = 'flex';
+      document.getElementById('adminContainer').style.display = 'none';
+      document.getElementById('adminPasswordInput').value = '';
+    }
+
+    async function checkAuth() {
+      const token = getAdminToken();
+      if (!token) {
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('adminContainer').style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/verify', {
+          headers: { 'x-admin-token': token }
+        });
+        const json = await res.json();
+        if (json.success) {
+          unlockDashboard();
+        } else {
+          handleLogout();
+        }
+      } catch (err) {
+        handleLogout();
+      }
+    }
+
+    function unlockDashboard() {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('adminContainer').style.display = 'block';
+      loadAdminData();
+      checkWhatsAppStatus();
+      setInterval(checkWhatsAppStatus, 4000);
+    }
+
+    async function loadAdminData() {
+      try {
+        const res = await fetch('/api/admin/data', {
+          headers: { 'x-admin-token': getAdminToken() }
+        });
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+        const json = await res.json();
+        if (json.success) {
+          const { vouchers, orders, stats } = json.data;
+          currentVouchers = vouchers;
+
+          document.getElementById('statAvailable').innerText = stats.available;
+          document.getElementById('statLocked').innerText = stats.locked;
+          document.getElementById('statSold').innerText = stats.sold;
+          document.getElementById('statRevenue').innerText = 'Rp ' + (stats.sold * (stats.settings.price || 75000)).toLocaleString('id-ID');
+
+          const vTbody = document.getElementById('voucherTableBody');
+          vTbody.innerHTML = vouchers.map((v, i) => `
+            <tr>
+              <td style="font-weight: 700; font-family: monospace;">${v.id}</td>
+              <td><span class="badge ${v.status.toLowerCase()}">${v.status}</span></td>
+              <td>
+                <input type="text" value="${v.url || ''}" data-index="${i}" class="voucher-url-input" placeholder="https://one.google.com/promo/...">
+              </td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">
+                ${v.status === 'SOLD' ? `Lunas: <strong style="color: #38bdf8;">${v.buyerPhone || 'Pembeli'}</strong>` : (v.status === 'LOCKED' ? `Di-hold: ${v.orderId}` : 'Siap Dijual')}
+              </td>
+            </tr>
+          `).join('');
+
+          const oTbody = document.getElementById('ordersTableBody');
+          if (orders.length === 0) {
+            oTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Belum ada pesanan masuk.</td></tr>';
+          } else {
+            oTbody.innerHTML = orders.slice().reverse().map(o => `
+              <tr>
+                <td style="font-family: monospace; font-weight: 700;">${o.id}</td>
+                <td style="font-size: 0.78rem;">${new Date(o.createdAt).toLocaleString('id-ID')}</td>
+                <td style="font-weight: 600; color: #38bdf8;">${o.customerPhone || '-'}</td>
+                <td>Rp ${Number(o.amount).toLocaleString('id-ID')}</td>
+                <td><span class="badge ${o.status.toLowerCase()}">${o.status}</span></td>
+                <td style="font-family: monospace; font-size: 0.78rem;">${o.voucherId || '-'}</td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function checkWhatsAppStatus() {
+      try {
+        const res = await fetch('/api/admin/whatsapp/status', {
+          headers: { 'x-admin-token': getAdminToken() }
+        });
+        if (res.status === 401) return;
+        const json = await res.json();
+        if (json.success) {
+          const { status, connectedNumber, qrCodeUrl } = json.data;
+          const badge = document.getElementById('waStatusBadge');
+          const desc = document.getElementById('waStatusDesc');
+          const qrBox = document.getElementById('waQrContainer');
+          const logoutBtn = document.getElementById('waLogoutBtn');
+
+          if (status === 'CONNECTED') {
+            badge.className = 'wa-status-badge connected';
+            badge.innerHTML = `✅ WhatsApp Terhubung (+${connectedNumber}) - mybrotools`;
+            desc.innerHTML = `WhatsApp sudah aktif dan siap mengirimkan link voucher serta riwayat pembelian secara otomatis ke pembeli begitu pembayaran lunas.`;
+            qrBox.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+          } else if (status === 'SCAN_QR' && qrCodeUrl) {
+            badge.className = 'wa-status-badge waiting';
+            badge.innerHTML = `⚠️ Perlu Scan QR WhatsApp`;
+            desc.innerHTML = `Buka WhatsApp di HP Anda > Perangkat Tertaut > Tautkan Perangkat, lalu scan QR Code di sebelah kanan:`;
+            qrBox.style.display = 'block';
+            document.getElementById('waQrImage').src = qrCodeUrl;
+            logoutBtn.style.display = 'none';
+          } else {
+            badge.className = 'wa-status-badge waiting';
+            badge.innerHTML = `⏳ Menghubungkan ke WhatsApp...`;
+            qrBox.style.display = 'none';
+            logoutBtn.style.display = 'none';
+          }
+        }
+      } catch (e) {
+        console.warn('WA status check error:', e);
+      }
+    }
+
+    document.getElementById('saveVouchersBtn').addEventListener('click', async () => {
+      const inputs = document.querySelectorAll('.voucher-url-input');
+      inputs.forEach(inp => {
+        const idx = parseInt(inp.getAttribute('data-index'), 10);
+        if (currentVouchers[idx]) {
+          currentVouchers[idx].url = inp.value.trim();
+        }
+      });
+
+      const res = await fetch('/api/admin/vouchers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': getAdminToken()
+        },
+        body: JSON.stringify({ vouchers: currentVouchers })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Berhasil menyimpan URL 10 voucher ke Supabase!');
+        loadAdminData();
+      } else {
+        alert('Gagal menyimpan: ' + (data.error || 'Terjadi kesalahan'));
+      }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      if (confirm('Yakin ingin mereset semua voucher ke status AVAILABLE?')) {
+        const res = await fetch('/api/admin/reset', {
+          method: 'POST',
+          headers: { 'x-admin-token': getAdminToken() }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Semua voucher berhasil direset ke AVAILABLE!');
+          loadAdminData();
+        }
+      }
+    });
+
+    document.getElementById('waLogoutBtn').addEventListener('click', async () => {
+      if (confirm('Yakin ingin memutuskan koneksi WhatsApp ini?')) {
+        const res = await fetch('/api/admin/whatsapp/logout', {
+          method: 'POST',
+          headers: { 'x-admin-token': getAdminToken() }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Sesi WhatsApp diputuskan. Silakan scan ulang jika ingin menghubungkan lagi.');
+          checkWhatsAppStatus();
+        }
+      }
+    });
+
+    // Initialize Auth Check
+    checkAuth();
+  </script>
+</body>
+</html>
