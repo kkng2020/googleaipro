@@ -205,6 +205,31 @@
       border-color: var(--primary);
     }
 
+    /* Voucher Input States */
+    .avail-voucher-input {
+      font-family: monospace;
+      font-size: 0.82rem;
+      padding: 7px 12px;
+      border-radius: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+    }
+    .avail-voucher-input.locked {
+      background: rgba(15, 23, 42, 0.65) !important;
+      color: #94a3b8 !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      cursor: not-allowed;
+      user-select: all;
+    }
+    .avail-voucher-input.editing {
+      background: #0f172a !important;
+      color: #38bdf8 !important;
+      border: 1.5px solid #6366f1 !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+      cursor: text;
+    }
+
     /* Lock Badge & Notice */
     .locked-card-notice {
       background: rgba(99, 102, 241, 0.08);
@@ -442,15 +467,12 @@
             <span class="badge available" id="badgeAvailableCount">0 Siap Jual</span>
           </h2>
           <p class="card-subtitle">
-            Daftar voucher Google AI Pro aktif yang siap dikirimkan otomatis ke pembeli baru berikutnya.
+            Daftar voucher Google AI Pro aktif yang siap dikirimkan otomatis ke pembeli baru berikutnya. Link terkunci aman secara default, klik <strong>Edit</strong> jika ingin mengubah.
           </p>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-primary" onclick="openAddVoucherModal()">
             <span>+</span> Tambah Voucher Baru
-          </button>
-          <button class="btn btn-success" id="saveAvailableVouchersBtn">
-            💾 Simpan Perubahan URL
           </button>
         </div>
       </div>
@@ -706,7 +728,7 @@
             `;
           } else {
             availTbody.innerHTML = availableVouchers.map((v, i) => `
-              <tr>
+              <tr id="row-${v.id}">
                 <td style="font-weight: 800; font-family: monospace; color: #818cf8;">${v.id}</td>
                 <td>
                   <span class="badge ${v.status.toLowerCase()}">
@@ -715,14 +737,35 @@
                 </td>
                 <td>
                   <div style="display: flex; gap: 6px; align-items: center;">
-                    <input type="text" value="${v.url || ''}" data-id="${v.id}" class="avail-voucher-input" placeholder="https://one.google.com/promo/..." style="font-family: monospace; font-size: 0.82rem;">
-                    ${v.url ? `<a href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>` : ''}
+                    <div style="position: relative; flex: 1;">
+                      <input 
+                        type="text" 
+                        id="input-${v.id}" 
+                        value="${v.url || ''}" 
+                        data-id="${v.id}" 
+                        data-original="${v.url || ''}" 
+                        class="avail-voucher-input locked" 
+                        readonly 
+                        disabled 
+                        placeholder="https://one.google.com/promo/..." 
+                        onkeydown="if(event.key==='Enter') commitEditVoucher('${v.id}'); if(event.key==='Escape') cancelEditVoucher('${v.id}');"
+                      >
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${v.url || ''}')" title="Salin Link">📋</button>
+                    <span id="testlink-wrap-${v.id}">
+                      ${v.url ? `<a id="testlink-${v.id}" href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>` : ''}
+                    </span>
                   </div>
                 </td>
                 <td style="text-align: center;">
-                  <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${v.id}')" title="Hapus Voucher ini">
-                    🗑 Hapus
-                  </button>
+                  <div id="actions-${v.id}" style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                    <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${v.id}')" title="Buka Edit Link">
+                      ✏️ Edit
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${v.id}')" title="Hapus Voucher ini">
+                      🗑 Hapus
+                    </button>
+                  </div>
                 </td>
               </tr>
             `).join('');
@@ -883,53 +926,129 @@
       }
     }
 
-    // Save modified URLs in Available Table
-    document.getElementById('saveAvailableVouchersBtn').addEventListener('click', async () => {
-      const inputs = document.querySelectorAll('.avail-voucher-input');
-      const updatedList = [];
+    // -------------------------------------------------------------
+    // Edit & Commit Single Voucher Link Handlers
+    // -------------------------------------------------------------
+    function startEditVoucher(id) {
+      const input = document.getElementById(`input-${id}`);
+      const actionsDiv = document.getElementById(`actions-${id}`);
+      if (!input || !actionsDiv) return;
 
-      inputs.forEach(inp => {
-        const id = inp.getAttribute('data-id');
-        const url = inp.value.trim();
-        const existing = allVouchers.find(v => v.id === id);
-        if (existing) {
-          updatedList.push({
-            ...existing,
-            url
-          });
-        }
-      });
+      input.removeAttribute('readonly');
+      input.removeAttribute('disabled');
+      input.classList.remove('locked');
+      input.classList.add('editing');
+      input.focus();
+      input.select();
 
-      // Keep sold vouchers intact
-      soldVouchers.forEach(sv => updatedList.push(sv));
+      actionsDiv.innerHTML = `
+        <button class="btn btn-success btn-sm" id="btn-save-${id}" onclick="commitEditVoucher('${id}')" title="Commit Simpan Perubahan">
+          💾 Simpan
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="cancelEditVoucher('${id}')" title="Batal Edit">
+          ✖ Batal
+        </button>
+      `;
+    }
 
-      const btn = document.getElementById('saveAvailableVouchersBtn');
-      btn.disabled = true;
-      btn.innerText = 'Menyimpan...';
+    function cancelEditVoucher(id) {
+      const input = document.getElementById(`input-${id}`);
+      const actionsDiv = document.getElementById(`actions-${id}`);
+      if (!input || !actionsDiv) return;
+
+      input.value = input.getAttribute('data-original') || '';
+      input.setAttribute('readonly', 'true');
+      input.setAttribute('disabled', 'true');
+      input.classList.remove('editing');
+      input.classList.add('locked');
+
+      actionsDiv.innerHTML = `
+        <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${id}')" title="Buka Edit Link">
+          ✏️ Edit
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${id}')" title="Hapus Voucher ini">
+          🗑 Hapus
+        </button>
+      `;
+    }
+
+    async function commitEditVoucher(id) {
+      const input = document.getElementById(`input-${id}`);
+      const actionsDiv = document.getElementById(`actions-${id}`);
+      const saveBtn = document.getElementById(`btn-save-${id}`);
+      if (!input) return;
+
+      const newUrl = input.value.trim();
+      if (!newUrl) {
+        alert('URL promo voucher tidak boleh kosong!');
+        input.focus();
+        return;
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Menyimpan...';
+      }
 
       try {
-        const res = await fetch('/api/admin/vouchers', {
-          method: 'POST',
+        const res = await fetch(`/api/admin/vouchers/${id}`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'x-admin-token': getAdminToken()
           },
-          body: JSON.stringify({ vouchers: updatedList })
+          body: JSON.stringify({ url: newUrl })
         });
+
         const data = await res.json();
         if (data.success) {
-          alert('✅ Perubahan URL voucher berhasil disimpan ke database Supabase!');
-          loadAdminData();
+          // Update data-original and close edit
+          input.setAttribute('data-original', newUrl);
+          input.setAttribute('readonly', 'true');
+          input.setAttribute('disabled', 'true');
+          input.classList.remove('editing');
+          input.classList.add('locked');
+
+          // Update test link href
+          const wrap = document.getElementById(`testlink-wrap-${id}`);
+          if (wrap) {
+            wrap.innerHTML = `<a id="testlink-${id}" href="${newUrl}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>`;
+          }
+
+          // Restore actions
+          if (actionsDiv) {
+            actionsDiv.innerHTML = `
+              <button class="btn btn-outline btn-sm" onclick="startEditVoucher('${id}')" title="Buka Edit Link">
+                ✏️ Edit
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${id}')" title="Hapus Voucher ini">
+                🗑 Hapus
+              </button>
+            `;
+          }
+
+          // Update local data cache
+          const vObj = allVouchers.find(v => v.id === id);
+          if (vObj) vObj.url = newUrl;
+          const avObj = availableVouchers.find(v => v.id === id);
+          if (avObj) avObj.url = newUrl;
+
+          alert(`✅ Link voucher ${id} berhasil diperbarui & disimpan!`);
         } else {
-          alert('❌ Gagal menyimpan: ' + (data.error || 'Terjadi kesalahan'));
+          alert(`❌ Gagal menyimpan: ${data.error || 'Terjadi kesalahan'}`);
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = '💾 Simpan';
+          }
         }
       } catch (err) {
-        alert('❌ Error: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = '💾 Simpan Perubahan URL';
+        alert(`❌ Error: ${err.message}`);
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerText = '💾 Simpan';
+        }
       }
-    });
+    }
 
     async function checkWhatsAppStatus() {
       try {

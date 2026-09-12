@@ -449,6 +449,20 @@ app.post('/api/admin/vouchers', requireAdminAuth, async (req, res) => {
   }
 });
 
+app.put('/api/admin/vouchers/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { url } = req.body;
+    const updated = await StockManager.updateSingleVoucher(req.params.id, url);
+    res.json({
+      success: true,
+      message: `Link voucher ${req.params.id} berhasil diperbarui!`,
+      data: updated
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/admin/vouchers/add', requireAdminAuth, async (req, res) => {
   try {
     const { urls } = req.body;

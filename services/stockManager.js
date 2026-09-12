@@ -522,6 +522,41 @@ class StockManager {
     return localData.vouchers;
   }
 
+  static async updateSingleVoucher(id, newUrl) {
+    const localData = readData();
+    const v = localData.vouchers.find(item => item.id === id);
+    if (!v) {
+      throw new Error(`Voucher dengan ID ${id} tidak ditemukan`);
+    }
+    if (v.status === 'SOLD') {
+      throw new Error(`Voucher ${id} sudah terjual (LUNAS) dan terkunci permanen!`);
+    }
+
+    const cleanUrl = (newUrl || '').trim();
+    if (!cleanUrl) {
+      throw new Error('URL voucher tidak boleh kosong');
+    }
+
+    v.url = cleanUrl;
+    writeData(localData);
+
+    if (isConfigured()) {
+      try {
+        await supabase
+          .from('vouchers')
+          .update({
+            url: cleanUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id);
+      } catch (err) {
+        console.error('Supabase updateSingleVoucher error:', err.message);
+      }
+    }
+
+    return v;
+  }
+
   static async addVouchers(urls) {
     if (!Array.isArray(urls) || urls.length === 0) {
       throw new Error('Daftar URL voucher tidak boleh kosong');
