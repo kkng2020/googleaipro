@@ -1,62 +1,89 @@
-/**
- * Automated QRIS Checkout & Voucher Delivery Application
- */
-
 let currentOrder = null;
 let pollInterval = null;
 let countdownInterval = null;
 
-function formatRupiah(number) {
-  return 'Rp ' + Number(number).toLocaleString('id-ID');
+function formatRupiah(amount) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
 }
 
-function showToast(message) {
+function formatDateTime(dateStr) {
+  const date = dateStr ? new Date(dateStr) : new Date();
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${d}/${m}/${y} ${h}:${min}:${s}`;
+}
+
+function showToast(msg) {
   const toast = document.getElementById('toastMsg');
-  toast.innerText = message;
+  toast.innerText = msg;
   toast.classList.add('show');
   setTimeout(() => {
     toast.classList.remove('show');
-  }, 2500);
+  }, 3500);
 }
 
-function formatDateTime(isoString) {
-  const date = isoString ? new Date(isoString) : new Date();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const d = date.getDate();
-  const m = months[date.getMonth()];
-  const y = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  return `${d} ${m} ${y}, ${hh}.${mm}`;
+// -------------------------------------------------------------
+// BuatQris Native Popup Modal Controls
+// -------------------------------------------------------------
+function openBuatQrisModal(paymentUrl) {
+  if (!paymentUrl) return;
+  const overlay = document.getElementById('bqModalOverlay');
+  const iframe = document.getElementById('bqIframe');
+  const loader = document.getElementById('bqIframeLoader');
+
+  if (loader) loader.classList.remove('hide');
+  iframe.src = paymentUrl;
+
+  iframe.onload = () => {
+    if (loader) loader.classList.add('hide');
+  };
+
+  overlay.style.display = 'flex';
+}
+
+function closeBuatQrisModal() {
+  const overlay = document.getElementById('bqModalOverlay');
+  if (overlay) overlay.style.display = 'none';
+  const iframe = document.getElementById('bqIframe');
+  if (iframe) iframe.src = '';
 }
 
 async function fetchStoreInfo() {
   try {
     const res = await fetch('/api/info');
     const data = await res.json();
-    if (data.success) {
-      const info = data.data;
-      document.getElementById('productTitle').innerText = info.productName;
-      document.getElementById('landingPrice').innerText = formatRupiah(info.price);
-      document.getElementById('stockCountText').innerText = `Tersisa ${info.stock.available} dari ${info.stock.total}`;
-      
-      const percent = (info.stock.available / info.stock.total) * 100;
-      document.getElementById('stockBarFill').style.width = `${percent}%`;
+    if (data.success && data.data) {
+      const { price, stock, merchantName } = data.data;
 
-      const startBuyBtn = document.getElementById('startBuyBtn');
-      if (info.stock.isSoldOut) {
-        startBuyBtn.disabled = true;
-        startBuyBtn.style.opacity = '0.5';
-        startBuyBtn.style.cursor = 'not-allowed';
-        startBuyBtn.innerText = 'Maaf, Stok Habis Terjual';
-      } else {
-        startBuyBtn.innerHTML = `
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          Beli Sekarang (${formatRupiah(info.price)})
+      const priceFormatted = formatRupiah(price);
+      document.getElementById('landingPrice').innerText = priceFormatted;
+      document.getElementById('startBuyBtn').innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        Beli Sekarang (${priceFormatted})
+      `;
+
+      document.getElementById('stockCountText').innerText = `Tersisa ${stock.available} dari ${stock.total}`;
+      const percentage = (stock.available / stock.total) * 100;
+      document.getElementById('stockBarFill').style.width = `${percentage}%`;
+
+      if (stock.isSoldOut) {
+        document.getElementById('startBuyBtn').disabled = true;
+        document.getElementById('startBuyBtn').style.opacity = '0.5';
+        document.getElementById('startBuyBtn').innerHTML = `
+          <span>❌ Stok Habis Terjual</span>
         `;
       }
     }
@@ -102,7 +129,7 @@ function renderOrderView(order) {
   document.getElementById('landingView').style.display = 'none';
   document.getElementById('checkoutView').style.display = 'grid';
 
-  document.getElementById('merchantBadgeName').innerText = order.merchantName || 'Google AI Store';
+  document.getElementById('merchantBadgeName').innerText = order.merchantName || 'mybrotools';
   document.getElementById('displayAmount').innerText = formatRupiah(order.amount);
   document.getElementById('displayOrderId').innerText = `Pesanan ${order.orderId || order.id}`;
   document.getElementById('rincianTotal').innerText = formatRupiah(order.total || order.amount);
@@ -113,14 +140,17 @@ function renderOrderView(order) {
   document.getElementById('displayTime').innerText = formatDateTime(order.createdAt);
 
   if (order.status === 'PAID') {
+    closeBuatQrisModal();
     renderSuccessState(order);
   } else {
     document.getElementById('qrisBox').style.display = 'flex';
     document.getElementById('successBox').style.display = 'none';
-    document.getElementById('qrisImage').src = order.qrCodeUrl;
+    if (order.qrCodeUrl) {
+      document.getElementById('qrisImage').src = order.qrCodeUrl;
+    }
 
     document.getElementById('statusAlertBox').className = 'status-alert-box pending';
-    document.getElementById('statusAlertText').innerText = 'Menunggu pembayaran... Silakan scan QRIS di samping.';
+    document.getElementById('statusAlertText').innerText = 'Menunggu pembayaran... Silakan bayar melalui popup BuatQris atau link WA.';
 
     startCountdown(order.expiresAt);
     startPolling(order.orderId || order.id);
@@ -131,9 +161,14 @@ function renderSuccessState(order) {
   if (pollInterval) clearInterval(pollInterval);
   if (countdownInterval) clearInterval(countdownInterval);
 
+  // Auto close BuatQris popup modal
+  closeBuatQrisModal();
+
   const timerText = document.getElementById('timerText');
-  timerText.innerText = '-- : --';
-  timerText.style.color = 'var(--text-main)';
+  if (timerText) {
+    timerText.innerText = '-- : --';
+    timerText.style.color = 'var(--text-main)';
+  }
 
   document.getElementById('qrisBox').style.display = 'none';
   const successBox = document.getElementById('successBox');
@@ -151,7 +186,6 @@ function renderSuccessState(order) {
     waBtn.href = order.waLink;
     waBtn.style.display = 'flex';
   } else {
-    // If waLink wasn't provided yet, build on the fly
     const historyUrl = `${window.location.origin}/?order=${order.orderId || order.id}`;
     const defaultMsg = `Halo! Terima kasih telah membeli Voucher Google AI Pro 🎉\n\nNo. Pesanan: ${order.orderId || order.id}\nStatus: Lunas\nLink Klaim: ${order.voucherUrl}\nHistory: ${historyUrl}`;
     const cleanPhone = (order.customerPhone || '').replace(/[^0-9]/g, '');
@@ -164,7 +198,7 @@ function renderSuccessState(order) {
   copyBtn.onclick = () => {
     if (order.voucherUrl) {
       navigator.clipboard.writeText(order.voucherUrl).then(() => {
-        showToast('Link klaim voucher berhasil disalin!');
+        showToast('Link voucher berhasil disalin!');
       });
     }
   };
@@ -175,7 +209,7 @@ function renderSuccessState(order) {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <polyline points="20 6 9 17 4 12"></polyline>
     </svg>
-    <span>Pembayaran telah berhasil!</span>
+    <span>Pembayaran terverifikasi! Link voucher siap diklaim.</span>
   `;
 }
 
@@ -188,17 +222,19 @@ function startPolling(orderId) {
       const data = await res.json();
       if (data.success && data.data) {
         if (data.data.status === 'PAID') {
+          showToast('🎉 Pembayaran berhasil diverifikasi!');
           renderSuccessState(data.data);
         } else if (data.data.status === 'EXPIRED') {
           clearInterval(pollInterval);
           clearInterval(countdownInterval);
+          closeBuatQrisModal();
           document.getElementById('statusAlertText').innerText = 'Waktu pembayaran telah habis.';
         }
       }
     } catch (e) {
       console.warn('Polling error:', e);
     }
-  }, 2500);
+  }, 2000);
 }
 
 async function handleCreateOrder() {
@@ -207,7 +243,7 @@ async function handleCreateOrder() {
 
   // Validate Phone
   if (!buyerPhone || buyerPhone.length < 9) {
-    alert('Mohon masukkan nomor WhatsApp yang aktif (minimal 9 digit, contoh: 08123456789) agar link voucher dan struk pembelian dapat dikirimkan ke Anda.');
+    alert('Mohon masukkan nomor WhatsApp yang aktif (minimal 9 digit, contoh: 08123456789) agar link pembayaran dan voucher dapat dikirimkan ke Anda.');
     document.getElementById('buyerPhoneInput').focus();
     return;
   }
@@ -217,7 +253,7 @@ async function handleCreateOrder() {
     <svg style="animation: spin 1s linear infinite;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
     </svg>
-    Menyiapkan QRIS Dinamis...
+    Menyiapkan Pembayaran BuatQris...
   `;
 
   try {
@@ -243,6 +279,12 @@ async function handleCreateOrder() {
     window.history.pushState({}, '', url);
 
     renderOrderView(data.data);
+
+    // Open Original BuatQris Popup Modal
+    if (data.data.paymentUrl) {
+      openBuatQrisModal(data.data.paymentUrl);
+      showToast('📩 Link pembayaran juga telah dikirim ke WhatsApp Anda!');
+    }
   } catch (err) {
     console.error('Create order error:', err);
     alert('Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.');
@@ -264,6 +306,7 @@ async function handleSimulatePay() {
     const data = await res.json();
     if (data.success) {
       showToast('Pembayaran berhasil diverifikasi!');
+      closeBuatQrisModal();
       renderSuccessState({
         ...currentOrder,
         status: 'PAID',
@@ -293,6 +336,7 @@ async function handleManualCheck() {
     if (data.success && data.data) {
       if (data.data.status === 'PAID') {
         showToast('Pembayaran sudah lunas!');
+        closeBuatQrisModal();
         renderSuccessState(data.data);
       } else {
         showToast('Menunggu dana masuk dari aplikasi bank/e-wallet Anda...');
@@ -384,6 +428,24 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('manualCheckBtn').addEventListener('click', handleManualCheck);
   document.getElementById('downloadStrukBtn').addEventListener('click', handleDownloadStruk);
   document.getElementById('shareBtn').addEventListener('click', handleShare);
+
+  // BuatQris Popup Close Button
+  document.getElementById('closeBqModalBtn')?.addEventListener('click', () => {
+    if (currentOrder && currentOrder.status !== 'PAID') {
+      if (confirm('Link pembayaran resmi sudah dikirimkan ke WhatsApp Anda. Anda dapat membukanya kapan saja dari WhatsApp. Yakin ingin menutup popup pembayaran ini?')) {
+        closeBuatQrisModal();
+      }
+    } else {
+      closeBuatQrisModal();
+    }
+  });
+
+  // Reopen BuatQris Modal Button
+  document.getElementById('reopenBqModalBtn')?.addEventListener('click', () => {
+    if (currentOrder && currentOrder.paymentUrl) {
+      openBuatQrisModal(currentOrder.paymentUrl);
+    }
+  });
 
   checkUrlParams();
 });

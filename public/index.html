@@ -137,6 +137,9 @@
 
             <!-- Testing Helper / Simulator Trigger -->
             <div style="margin-top: 10px;">
+              <button class="btn-primary" id="reopenBqModalBtn" style="width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 10px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border: none;">
+                <span>↗ Buka Halaman Bayar BuatQris</span>
+              </button>
               <button class="sim-trigger-btn" id="simulatePayBtn" title="Klik untuk simulasi bayar instan">
                 ⚡ <span>Simulasikan Bayar Berhasil (Tes)</span>
               </button>
@@ -161,7 +164,7 @@
             <!-- Title & Subtitle -->
             <h2 class="success-title">Pembayaran Berhasil!</h2>
             <p class="success-subtitle">
-              Terima kasih, pembayaran Anda telah berhasil diterima.
+              Terima kasih, pembayaran Anda telah berhasil diterima dan diverifikasi.
             </p>
 
             <!-- Prominent Google AI Pro Voucher Claim Box -->
@@ -252,10 +255,10 @@
             <div class="receipt-row">
               <span class="label">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
-                Nominal
+                Nominal Pesanan
               </span>
               <span class="value" id="rincianNominal">Rp 75.000</span>
             </div>
@@ -263,8 +266,8 @@
             <div class="receipt-row">
               <span class="label">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                  <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
                 Biaya Layanan
               </span>
@@ -278,7 +281,7 @@
                 </svg>
                 No. WhatsApp
               </span>
-              <span class="value" id="rincianPhone" style="font-family: monospace;">--</span>
+              <span class="value" id="rincianPhone" style="font-weight: 700; color: #6366f1;">-</span>
             </div>
           </div>
 
@@ -342,7 +345,7 @@
           <!-- Auto-update indicator -->
           <div class="auto-update-indicator">
             <span class="live-dot"></span>
-            <span>Status diperbarui otomatis setiap beberapa detik</span>
+            <span>Status diperbarui otomatis secara real-time</span>
           </div>
 
           <!-- Security Footer -->
@@ -360,6 +363,45 @@
 
     </main>
 
+  </div>
+
+  <!-- BUATQRIS ORIGINAL PAYMENT MODAL (POPUP) -->
+  <div id="bqModalOverlay" class="bq-modal-overlay" style="display: none;">
+    <div class="bq-modal-card">
+      <div class="bq-modal-header">
+        <div class="bq-modal-title">
+          <div class="bq-store-chip">
+            <div class="store-avatar" style="width: 24px; height: 24px; font-size: 0.72rem;">MB</div>
+            <span>mybrotools</span>
+            <svg class="verified" viewBox="0 0 24 24" fill="#6366f1" style="width: 14px; height: 14px;">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <div class="bq-status-pill">
+            <span class="pulse-dot"></span>
+            <span>Menunggu Pembayaran</span>
+          </div>
+        </div>
+        <button class="bq-modal-close-btn" id="closeBqModalBtn" title="Tutup Popup">&times;</button>
+      </div>
+
+      <!-- Iframe Container -->
+      <div class="bq-iframe-container">
+        <div id="bqIframeLoader" class="bq-iframe-loader">
+          <div class="spinner"></div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px; font-weight: 600;">Memuat Halaman Pembayaran QRIS Resmi...</div>
+        </div>
+        <iframe id="bqIframe" src="" frameborder="0" allowfullscreen></iframe>
+      </div>
+
+      <!-- Footer Notice -->
+      <div class="bq-modal-footer">
+        <div class="bq-footer-info">
+          <span style="font-size: 1rem;">🔄</span>
+          <span>Sistem mengecek status otomatis secara real-time. Link bayar juga telah dikirim ke WhatsApp Anda.</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Element -->

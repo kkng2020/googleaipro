@@ -23,24 +23,24 @@
     {
       "id": "GAIP-VOUCHER-02",
       "url": "https://one.google.com/promo/ai-pro-sample-2",
-      "status": "AVAILABLE",
-      "lockedUntil": null,
-      "orderId": null,
+      "status": "LOCKED",
+      "lockedUntil": 1789235259251,
+      "orderId": "GAIP-260913-0WK9Q",
       "soldAt": null,
-      "buyerName": null,
+      "buyerName": "Barth Test",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "081234567890"
     },
     {
       "id": "GAIP-VOUCHER-03",
       "url": "https://one.google.com/promo/ai-pro-sample-3",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
-      "buyerName": null,
+      "orderId": "GAIP-260913-GG7NH",
+      "soldAt": "2026-09-12T17:38:28.862Z",
+      "buyerName": "Pelanggan 7890",
       "buyerContact": null,
-      "buyerPhone": null
+      "buyerPhone": "081234567890081234567890"
     },
     {
       "id": "GAIP-VOUCHER-04",
@@ -157,6 +157,42 @@
       "paymentDetails": {
         "method": "SIMULATOR_TEST",
         "paidAt": "2026-09-12T17:17:37.833Z"
+      }
+    },
+    {
+      "id": "GAIP-260913-0WK9Q",
+      "transactionId": "TJJC-26LZ-09YP-13UU",
+      "amount": 75746,
+      "voucherId": "GAIP-VOUCHER-02",
+      "status": "PENDING",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/TJJC-26LZ-09YP-13UU.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/TJJC-26LZ-09YP-13UU.png",
+      "paymentUrl": "https://app.buatqris.site/trx/TJJC-26LZ-09YP-13UU",
+      "customerName": "Barth Test",
+      "customerPhone": "081234567890",
+      "createdAt": "2026-09-12T17:37:39.633Z",
+      "expiresAt": "2026-09-12T17:47:39.251Z",
+      "paidAt": null,
+      "provider": "buatqris"
+    },
+    {
+      "id": "GAIP-260913-GG7NH",
+      "transactionId": "44EW-2634-09PH-13BF",
+      "amount": 75733,
+      "voucherId": "GAIP-VOUCHER-03",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/44EW-2634-09PH-13BF.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/44EW-2634-09PH-13BF.png",
+      "paymentUrl": "https://app.buatqris.site/trx/44EW-2634-09PH-13BF",
+      "customerName": "Pelanggan 7890",
+      "customerPhone": "081234567890081234567890",
+      "createdAt": "2026-09-12T17:38:13.251Z",
+      "expiresAt": "2026-09-12T17:48:13.003Z",
+      "paidAt": "2026-09-12T17:38:28.862Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "method": "SIMULATOR_TEST",
+        "paidAt": "2026-09-12T17:38:28.861Z"
       }
     }
   ]

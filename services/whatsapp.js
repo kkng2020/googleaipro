@@ -12,6 +12,29 @@ function formatWhatsAppNumber(phone) {
   return cleaned;
 }
 
+function buildPaymentInstructionMessage({ orderId, buyerName, total, paymentUrl, storeName = 'mybrotools' }) {
+  return `Halo Kak ${buyerName || 'Pelanggan'}! 👋
+
+Terima kasih telah memesan *Voucher Google AI Pro* di *${storeName}* ✨
+
+Berikut adalah link pembayaran QRIS resmi pesanan Anda:
+
+📋 *RINCIAN PESANAN:*
+• No. Pesanan   : ${orderId}
+• Total Tagihan : Rp ${Number(total).toLocaleString('id-ID')}
+• Status        : MENUNGGU PEMBAYARAN ⏳
+
+🔗 *LINK PEMBAYARAN QRIS RESMI:*
+${paymentUrl}
+
+💡 *PANDUAN:*
+1. Buka link di atas pada HP Anda atau scan QRIS yang tampil di layar.
+2. Selesaikan pembayaran menggunakan m-Banking atau e-Wallet apa pun (BCA, Mandiri, BRI, BNI, GoPay, DANA, OVO, ShopeePay, dll).
+3. Begitu pembayaran berhasil, link klaim voucher Google AI Pro resmi akan *otomatis terkirim ke WhatsApp Anda* detik itu juga!
+
+Jika butuh bantuan, silakan langsung balas pesan ini ya Kak. Terima kasih! 🙏`;
+}
+
 function buildThankYouMessage({ orderId, buyerName, amount, voucherUrl, historyUrl, storeName = 'mybrotools' }) {
   return `Halo Kak ${buyerName || 'Pelanggan'}! 👋
 
@@ -44,7 +67,63 @@ function generateWaLink({ phone, message }) {
 }
 
 /**
- * Send WhatsApp message automatically via Baileys (primary) or Fonnte (fallback)
+ * Send WhatsApp payment instruction link automatically via Baileys (primary) or Fonnte (fallback)
+ */
+async function sendPaymentInstructionNotification({ phone, orderId, buyerName, total, paymentUrl, storeName = 'mybrotools' }) {
+  const formattedPhone = formatWhatsAppNumber(phone);
+  if (!formattedPhone) return { success: false, reason: 'No phone number' };
+
+  const message = buildPaymentInstructionMessage({
+    orderId,
+    buyerName,
+    total,
+    paymentUrl,
+    storeName
+  });
+
+  const waLink = generateWaLink({ phone: formattedPhone, message });
+
+  // 1. Try Baileys (Self-Hosted WhatsApp)
+  if (baileys.status === 'CONNECTED') {
+    const bResult = await baileys.sendMessage(formattedPhone, message);
+    if (bResult.success) {
+      return { success: true, provider: 'baileys', waLink, message };
+    }
+  }
+
+  // 2. Fallback to Fonnte if token is set
+  const fonnteToken = process.env.FONNTE_TOKEN;
+  if (fonnteToken) {
+    try {
+      console.log(`[WhatsApp] Mengirim instruksi bayar via Fonnte ke ${formattedPhone}...`);
+      await axios.post(
+        'https://api.fonnte.com/send',
+        {
+          target: formattedPhone,
+          message: message,
+          countryCode: '62'
+        },
+        {
+          headers: { Authorization: fonnteToken },
+          timeout: 10000
+        }
+      );
+      return { success: true, provider: 'fonnte', waLink, message };
+    } catch (err) {
+      console.error('Fonnte error:', err.message);
+    }
+  }
+
+  return {
+    success: false,
+    reason: 'WhatsApp belum tersambung via Baileys/Fonnte, tapi direct link tersedia',
+    waLink,
+    message
+  };
+}
+
+/**
+ * Send WhatsApp thank-you & voucher delivery automatically via Baileys (primary) or Fonnte (fallback)
  */
 async function sendWhatsAppNotification({ phone, orderId, buyerName, amount, voucherUrl, historyUrl, storeName = 'mybrotools' }) {
   const formattedPhone = formatWhatsAppNumber(phone);
@@ -102,7 +181,9 @@ async function sendWhatsAppNotification({ phone, orderId, buyerName, amount, vou
 
 module.exports = {
   formatWhatsAppNumber,
+  buildPaymentInstructionMessage,
   buildThankYouMessage,
   generateWaLink,
+  sendPaymentInstructionNotification,
   sendWhatsAppNotification
 };

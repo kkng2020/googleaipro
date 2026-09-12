@@ -6,7 +6,12 @@ const crypto = require('crypto');
 const StockManager = require('./services/stockManager');
 const { getPaymentProvider } = require('./services/payment');
 const { readData } = require('./data/store');
-const { sendWhatsAppNotification, generateWaLink, buildThankYouMessage } = require('./services/whatsapp');
+const {
+  sendWhatsAppNotification,
+  sendPaymentInstructionNotification,
+  generateWaLink,
+  buildThankYouMessage
+} = require('./services/whatsapp');
 const baileys = require('./services/baileys');
 
 // Initialize Baileys WhatsApp Connection only if not running on Vercel Serverless
@@ -18,6 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminmybro123';
+const orderLastCheckMap = new Map();
 
 // Capture raw body for webhook HMAC signature verification
 app.use(cors());
@@ -136,8 +142,21 @@ app.post('/api/order/create', async (req, res) => {
       customerPhone: customerPhone.trim(),
       qrCodeData: paymentResult.qrCodeData,
       qrCodeUrl: paymentResult.qrCodeUrl,
+      paymentUrl: paymentResult.paymentUrl || null,
       provider: provider.name
     });
+
+    // Send Payment Link to Customer WhatsApp simultaneously
+    if (paymentResult.paymentUrl) {
+      sendPaymentInstructionNotification({
+        phone: order.customerPhone,
+        orderId: order.id,
+        buyerName: order.customerName,
+        total: order.amount,
+        paymentUrl: paymentResult.paymentUrl,
+        storeName: stockInfo.settings.merchantName || 'mybrotools'
+      }).catch(err => console.error('WA payment link dispatch error:', err.message));
+    }
 
     res.json({
       success: true,
@@ -149,12 +168,12 @@ app.post('/api/order/create', async (req, res) => {
         total: order.amount,
         qrCodeUrl: order.qrCodeUrl,
         qrCodeData: order.qrCodeData,
+        paymentUrl: paymentResult.paymentUrl || null,
         expiresAt: order.expiresAt,
         status: order.status,
         provider: order.provider,
         merchantName: stockInfo.settings.merchantName,
-        customerPhone: order.customerPhone,
-        paymentUrl: paymentResult.paymentUrl || null
+        customerPhone: order.customerPhone
       }
     });
   } catch (error) {
@@ -168,6 +187,45 @@ app.get('/api/order/:id', async (req, res) => {
     const order = await StockManager.getOrder(req.params.id);
     if (!order) {
       return res.status(404).json({ success: false, error: 'Pesanan tidak ditemukan' });
+    }
+
+    // Fallback Active status check with BuatQris (15s throttle per order)
+    if (order.status === 'PENDING' && order.provider === 'buatqris' && order.transactionId) {
+      const now = Date.now();
+      const lastCheck = orderLastCheckMap.get(order.id) || 0;
+      if (now - lastCheck > 15000) {
+        orderLastCheckMap.set(order.id, now);
+        const provider = getPaymentProvider();
+        if (provider.name === 'buatqris' && provider.checkStatus) {
+          try {
+            const bqStatus = await provider.checkStatus(order.transactionId);
+            if (bqStatus && bqStatus.status === 'success') {
+              console.log(`✅ Order ${order.id} detected as PAID via BuatQris status check!`);
+              const markResult = await StockManager.markAsPaid(order.id, {
+                provider: 'buatqris',
+                statusCheck: bqStatus,
+                paidAt: bqStatus.updated_at || new Date().toISOString()
+              });
+              order.status = 'PAID';
+              order.voucherUrl = markResult.voucherUrl;
+              order.isPaid = true;
+
+              const historyUrl = `${BASE_URL}/?order=${order.id}`;
+              sendWhatsAppNotification({
+                phone: order.customerPhone,
+                orderId: order.id,
+                buyerName: order.customerName,
+                amount: order.amount,
+                voucherUrl: markResult.voucherUrl,
+                historyUrl,
+                storeName: 'mybrotools'
+              }).catch(e => console.error('WA notify error:', e.message));
+            }
+          } catch (chkErr) {
+            console.warn('BuatQris status check error:', chkErr.message);
+          }
+        }
+      }
     }
 
     let waLink = null;

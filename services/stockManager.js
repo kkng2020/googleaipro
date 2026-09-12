@@ -187,7 +187,7 @@ class StockManager {
     return { voucherId: voucher.id, lockedUntil: lockExpiry };
   }
 
-  static async createOrder({ id, transactionId, amount, customerName, customerPhone, qrCodeData, qrCodeUrl, provider = 'buatqris' }) {
+  static async createOrder({ id, transactionId, amount, customerName, customerPhone, qrCodeData, qrCodeUrl, paymentUrl, provider = 'buatqris' }) {
     const lockResult = await this.lockNextVoucher(id, customerName, customerPhone);
     const localData = readData();
 
@@ -199,6 +199,7 @@ class StockManager {
       status: 'PENDING',
       qrCodeData,
       qrCodeUrl,
+      paymentUrl: paymentUrl || null,
       customerName: customerName || 'Pembeli',
       customerPhone: customerPhone || '',
       createdAt: new Date().toISOString(),
@@ -225,7 +226,8 @@ class StockManager {
           expires_at: newOrder.expiresAt,
           raw_data: {
             voucherId: lockResult.voucherId,
-            transactionId: transactionId || null
+            transactionId: transactionId || null,
+            paymentUrl: paymentUrl || null
           }
         });
       } catch (err) {
@@ -258,6 +260,7 @@ class StockManager {
           if (dbOrder) {
             let voucherUrl = dbOrder.voucher_url;
             let voucherId = dbOrder.raw_data?.voucherId;
+            let paymentUrl = dbOrder.raw_data?.paymentUrl;
 
             if (dbOrder.status === 'PAID' && !voucherUrl && voucherId) {
               const { data: v } = await supabase
@@ -278,6 +281,7 @@ class StockManager {
               status: dbOrder.status,
               qrCodeData: dbOrder.qr_code_data,
               qrCodeUrl: dbOrder.qr_code_url,
+              paymentUrl,
               customerName: dbOrder.customer_name,
               customerPhone: dbOrder.customer_phone,
               createdAt: dbOrder.created_at,
