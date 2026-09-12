@@ -487,7 +487,11 @@
             <span>Status Bot WhatsApp (Baileys)</span>
           </h2>
         </div>
-        <button class="btn btn-danger btn-sm" id="waLogoutBtn" style="display: none;">Putuskan Sesi WhatsApp</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" id="waRefreshBtn" onclick="checkWhatsAppStatus()" title="Refresh Status">🔄 Cek Status</button>
+          <button class="btn btn-warning btn-sm" id="waResetBtn" onclick="handleResetWhatsApp()" title="Reset dan Buat QR Baru">🔁 Buat QR Baru</button>
+          <button class="btn btn-danger btn-sm" id="waLogoutBtn" style="display: none;">Putuskan Sesi</button>
+        </div>
       </div>
 
       <div class="wa-card">
@@ -1191,35 +1195,81 @@
         if (res.status === 401) return;
         const json = await res.json();
         if (json.success) {
-          const { status, connectedNumber, qrCodeUrl } = json.data;
+          const { status, connectedNumber, qrCodeUrl, serverless } = json.data || {};
           const badge = document.getElementById('waStatusBadge');
           const qrBox = document.getElementById('waQrContainer');
           const qrImg = document.getElementById('waQrImage');
           const logoutBtn = document.getElementById('waLogoutBtn');
+          const resetBtn = document.getElementById('waResetBtn');
+          const desc = document.getElementById('waStatusDesc');
+
+          if (serverless) {
+            badge.className = 'wa-status-badge waiting';
+            badge.style.background = 'rgba(99, 102, 241, 0.15)';
+            badge.style.color = '#818cf8';
+            badge.innerHTML = `☁️ Vercel Serverless Mode`;
+            if (desc) {
+              desc.innerHTML = `⚠️ <strong>Catatan Vercel:</strong> Bot WhatsApp Baileys memerlukan koneksi socket 24 jam nonstop yang tidak didukung oleh arsitektur Serverless Function Vercel (karena server langsung sleep saat idle).<br>💡 <strong>Solusi Pengiriman Otomatis:</strong> Masukkan <code>FONNTE_TOKEN</code> di Vercel Environment Variables agar notifikasi WA terkirim otomatis dari cloud, atau biarkan bot Baileys berjalan di daemon lokal Anda.`;
+            }
+            qrBox.style.display = 'none';
+            if (resetBtn) resetBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            return;
+          }
 
           const st = (status || '').toLowerCase();
           if (st === 'connected') {
             badge.className = 'wa-status-badge connected';
+            badge.style.background = '';
+            badge.style.color = '';
             badge.innerHTML = `🟢 Terhubung: +${connectedNumber || '628xxx'}`;
             qrBox.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
+            if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            if (resetBtn) resetBtn.style.display = 'none';
+            if (desc) {
+              desc.innerHTML = `Bot ini otomatis mengirimkan link pembayaran dan struk voucher Google AI Pro langsung ke nomor pembeli begitu pembayaran QRIS lunas.`;
+            }
           } else if (st === 'scan_qr' || st === 'waiting_qr' || qrCodeUrl) {
             badge.className = 'wa-status-badge waiting';
+            badge.style.background = '';
+            badge.style.color = '';
             badge.innerHTML = `🟡 Menunggu Scan QR`;
             if (qrCodeUrl) {
               qrImg.src = qrCodeUrl;
               qrBox.style.display = 'block';
             }
-            logoutBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (resetBtn) resetBtn.style.display = 'inline-block';
           } else {
             badge.className = 'wa-status-badge waiting';
+            badge.style.background = '';
+            badge.style.color = '';
             badge.innerHTML = `⏳ Menghubungkan ke WhatsApp...`;
             qrBox.style.display = 'none';
-            logoutBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (resetBtn) resetBtn.style.display = 'inline-block';
           }
         }
       } catch (e) {
         console.warn('WA status check error:', e);
+      }
+    }
+
+    async function handleResetWhatsApp() {
+      const btn = document.getElementById('waResetBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/whatsapp/logout', {
+          method: 'POST',
+          headers: { 'x-admin-token': getAdminToken() }
+        });
+        const data = await res.json();
+        showToast('🔄 Sesi WhatsApp di-reset. Menyiapkan barcode QR baru...');
+        setTimeout(checkWhatsAppStatus, 1500);
+      } catch (err) {
+        showToast('❌ Gagal reset: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
