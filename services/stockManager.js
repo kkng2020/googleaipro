@@ -67,32 +67,39 @@ class StockManager {
       }
 
       // 2. Also check any PENDING orders whose expires_at is past nowIso
+      // 2. Also check any PENDING orders where voucher hold (10 mins) has elapsed
       const { data: expiredOrders, error: ordErr } = await client
         .from('orders')
         .select('*')
-        .eq('status', 'PENDING')
-        .lt('expires_at', nowIso);
+        .eq('status', 'PENDING');
 
       if (!ordErr && expiredOrders && expiredOrders.length > 0) {
         for (const ord of expiredOrders) {
-          await client
-            .from('orders')
-            .update({ status: 'EXPIRED' })
-            .eq('id', ord.id);
+          const lockedUntil = ord.raw_data?.lockedUntil;
+          const isHoldExpired = lockedUntil
+            ? Date.now() > new Date(lockedUntil).getTime()
+            : (ord.expires_at && Date.now() > (new Date(ord.expires_at).getTime() + 5 * 60 * 1000));
 
-          await client
-            .from('vouchers')
-            .update({
-              status: 'AVAILABLE',
-              locked_until: null,
-              order_id: null,
-              buyer_name: null,
-              buyer_phone: null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('order_id', ord.id)
-            .eq('status', 'LOCKED');
-          console.log(`[StockManager] Order #${ord.id} marked as EXPIRED & voucher released.`);
+          if (isHoldExpired) {
+            await client
+              .from('orders')
+              .update({ status: 'EXPIRED' })
+              .eq('id', ord.id);
+
+            await client
+              .from('vouchers')
+              .update({
+                status: 'AVAILABLE',
+                locked_until: null,
+                order_id: null,
+                buyer_name: null,
+                buyer_phone: null,
+                updated_at: new Date().toISOString()
+              })
+              .eq('order_id', ord.id)
+              .eq('status', 'LOCKED');
+            console.log(`[StockManager] Order #${ord.id} reached 10-min hold limit. Marked EXPIRED & voucher released.`);
+          }
         }
       }
     } catch (err) {
@@ -130,6 +137,7 @@ class StockManager {
       currency: 'Rp',
       merchantName: 'mybrotools',
       orderTimeoutMinutes: 5,
+      voucherHoldMinutes: 10,
       supportContact: 'https://wa.me/'
     };
   }
@@ -194,9 +202,9 @@ class StockManager {
     await this.cleanupExpiredLocks();
     const client = ensureSupabase();
     const settings = await this.getSettings();
-    const timeoutMinutes = Number(settings.orderTimeoutMinutes) || 5;
-    const timeoutMs = timeoutMinutes * 60 * 1000;
-    const lockExpiry = Date.now() + timeoutMs;
+    const holdMinutes = Number(settings.voucherHoldMinutes) || 10;
+    const holdMs = holdMinutes * 60 * 1000;
+    const lockExpiry = Date.now() + holdMs;
     const lockExpiryIso = new Date(lockExpiry).toISOString();
 
     const { data: availableVouchers, error } = await client
@@ -235,13 +243,15 @@ class StockManager {
    */
   static async createOrder(orderData) {
     const client = ensureSupabase();
+    const settings = await this.getSettings();
+    const orderTimeoutMinutes = Number(settings.orderTimeoutMinutes) || 5;
+    const orderExpiresIso = new Date(Date.now() + orderTimeoutMinutes * 60 * 1000).toISOString();
+
     const lockResult = await this.lockNextVoucher(
       orderData.id,
       orderData.customerName,
       orderData.customerPhone
     );
-
-    const expiresIso = new Date(lockResult.lockedUntil).toISOString();
 
     const newOrder = {
       id: orderData.id,
@@ -256,13 +266,13 @@ class StockManager {
       voucher_url: null,
       provider: orderData.provider || 'buatqris',
       created_at: new Date().toISOString(),
-      expires_at: expiresIso,
+      expires_at: orderExpiresIso, // 5 menit batas bayar pembeli & countdown
       paid_at: null,
       raw_data: {
         transactionId: orderData.transactionId || null,
         paymentUrl: orderData.paymentUrl || null,
         voucherId: lockResult.voucherId,
-        lockedUntil: lockResult.lockedUntil
+        lockedUntil: lockResult.lockedUntil // 10 menit batas hold voucher (grace period)
       }
     };
 
@@ -312,10 +322,14 @@ class StockManager {
     }
     if (!dbOrder) return null;
 
-    // Check if pending order has passed its 5-minute expiration
-    if (dbOrder.status === 'PENDING' && dbOrder.expires_at) {
-      const isPastExpiry = Date.now() > new Date(dbOrder.expires_at).getTime();
-      if (isPastExpiry) {
+    // Check if pending order has passed its 10-minute voucher hold expiration
+    if (dbOrder.status === 'PENDING') {
+      const lockedUntil = dbOrder.raw_data?.lockedUntil;
+      const isHoldExpired = lockedUntil
+        ? Date.now() > new Date(lockedUntil).getTime()
+        : (dbOrder.expires_at && Date.now() > (new Date(dbOrder.expires_at).getTime() + 5 * 60 * 1000));
+
+      if (isHoldExpired) {
         dbOrder.status = 'EXPIRED';
         await client
           .from('orders')
@@ -334,7 +348,7 @@ class StockManager {
           })
           .eq('order_id', dbOrder.id)
           .eq('status', 'LOCKED');
-        console.log(`[StockManager] Order ${dbOrder.id} expired on fetch and voucher released.`);
+        console.log(`[StockManager] Order ${dbOrder.id} reached 10-min hold limit. Marked EXPIRED & voucher released.`);
       }
     }
 

@@ -129,7 +129,7 @@ function startCountdown(expiresAt) {
       clearInterval(countdownInterval);
       if (timerText) {
         timerText.innerText = '00 : 00';
-        timerText.style.color = '#ef4444';
+        timerText.style.color = '#eab308';
       }
       if (timerTextLarge) {
         timerTextLarge.innerText = '00 : 00';
@@ -137,26 +137,15 @@ function startCountdown(expiresAt) {
       }
       const alertBox = document.getElementById('statusAlertBox');
       if (alertBox) {
-        alertBox.className = 'status-alert-box';
-        alertBox.style.background = '#fef2f2';
-        alertBox.style.borderColor = '#fecaca';
-        alertBox.style.color = '#dc2626';
+        alertBox.className = 'status-alert-box pending';
+        alertBox.style.background = 'rgba(234, 179, 8, 0.1)';
+        alertBox.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+        alertBox.style.color = '#eab308';
       }
       const alertText = document.getElementById('statusAlertText');
-      if (alertText) alertText.innerText = 'Waktu pembayaran (5 menit) telah habis. Voucher telah dibuka kembali. Silakan buat pesanan baru.';
+      if (alertText) alertText.innerText = 'Batas waktu pembayaran (5 menit) telah tercapai. Jika Anda baru saja transfer, sistem sedang memverifikasi pembayaran Anda.';
 
       closeBuatQrisModal();
-      const reopenBtn = document.getElementById('reopenBqModalBtn');
-      if (reopenBtn) {
-        reopenBtn.innerHTML = '<span>🔄 Buat Pesanan Baru</span>';
-        reopenBtn.onclick = () => { window.location.href = '/'; };
-      }
-
-      // Notify backend to mark order as EXPIRED and release voucher immediately
-      if (currentOrder) {
-        const orderId = currentOrder.orderId || currentOrder.id;
-        fetch(`/api/order/${orderId}`).catch(() => {});
-      }
       return;
     }
 
