@@ -1,29 +1,38 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beli Voucher Google AI Pro - QRIS Otomatis</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
+
 <body>
 
   <div class="checkout-wrapper">
     <!-- Top Navigation -->
     <header class="top-nav">
       <a href="/" class="brand-logo">
-        <div class="store-avatar" style="width: 32px; height: 32px; font-size: 0.85rem; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);">MB</div>
-        <span style="font-weight: 800; letter-spacing: -0.5px; font-size: 1.25rem;">mybro<span class="accent" style="color: #6366f1;">tools</span></span>
-        <span class="brand-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">Official Store</span>
+        <div class="store-avatar"
+          style="width: 32px; height: 32px; font-size: 0.85rem; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);">
+          MB</div>
+        <span style="font-weight: 800; letter-spacing: -0.5px; font-size: 1.25rem;">mybro<span class="accent"
+            style="color: #6366f1;">tools</span></span>
+        <span class="brand-badge"
+          style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">Official
+          Store</span>
       </a>
 
       <!-- Theme Switcher -->
       <button class="theme-switch" id="themeToggle" title="Ganti Tema">
-        <svg id="themeIconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg id="themeIconSun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
           <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -39,7 +48,7 @@
 
     <!-- Main Card -->
     <main class="main-card" id="mainCard">
-      
+
       <!-- STATE 1: Initial Landing View (Before Clicking 'Beli Sekarang') -->
       <div id="landingView" class="landing-view">
         <div class="hero-badge">
@@ -47,7 +56,8 @@
         </div>
         <h1 class="product-title" id="productTitle">Voucher Google AI Pro</h1>
         <p class="product-desc">
-          Dapatkan akses Gemini Advanced berbayar, fitur AI coding tingkat tinggi, integrasi Google Workspace, serta 2TB Cloud Storage resmi dari Google!
+          Dapatkan akses Gemini AI Pro dengan masa aktif 18 Bulan, fitur AI coding tingkat tinggi, integrasi Google
+          Workspace, serta 5TB Cloud Storage Google Drive resmi dari Google!
         </p>
 
         <!-- Stock Meter -->
@@ -64,23 +74,27 @@
         <div style="margin-bottom: 20px;">
           <span style="font-size: 0.95rem; color: var(--text-muted);">Harga Spesial:</span>
           <div style="font-size: 2.5rem; font-weight: 800; color: #6366f1;" id="landingPrice">Rp 75.000</div>
-          <div style="font-size: 0.82rem; color: var(--text-light); margin-top: 4px;">⚡ Pengiriman instan otomatis via QRIS (Tanpa nunggu)</div>
+          <div style="font-size: 0.82rem; color: var(--text-light); margin-top: 4px;">⚡ Pengiriman instan otomatis via
+            QRIS (Tanpa nunggu)</div>
         </div>
 
         <!-- WhatsApp Input (Required for Delivery) -->
         <div style="max-width: 400px; margin: 0 auto 24px auto; text-align: left;">
-          <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px;">
+          <label
+            style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 6px;">
             📱 Nomor WhatsApp Anda <span style="color: #ef4444;">*</span>
           </label>
-          <input type="tel" id="buyerPhoneInput" placeholder="Contoh: 08123456789 atau 62812..." 
+          <input type="tel" id="buyerPhoneInput" placeholder="Contoh: 08123456789 atau 62812..."
             style="width: 100%; padding: 13px 16px; border-radius: 12px; border: 1.5px solid var(--border-color); background: var(--card-inner-bg); color: var(--text-main); font-size: 0.95rem; outline: none; transition: var(--transition);">
-          <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
+          <span
+            style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
             📩 Link voucher, bukti struk, dan riwayat pesanan akan otomatis dikirimkan ke WhatsApp Anda.
           </span>
         </div>
 
         <button class="buy-cta-button" id="startBuyBtn">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -91,10 +105,10 @@
 
       <!-- STATE 2: Two-Column Checkout View (Matching Screenshot) -->
       <div id="checkoutView" class="checkout-grid" style="display: none;">
-        
+
         <!-- LEFT COLUMN (QRIS -> Automatically turns into Success) -->
         <div class="col-left">
-          
+
           <!-- State A: QRIS Display (PENDING) -->
           <div id="qrisBox" class="qris-box">
             <!-- Alert Banner: Lakukan pembayaran untuk membuka voucher -->
@@ -102,7 +116,8 @@
               <div class="pending-banner-icon">🔒</div>
               <div class="pending-banner-text">
                 <div class="pending-banner-title">Lakukan Pembayaran untuk Membuka Voucher</div>
-                <div class="pending-banner-sub">Selesaikan pembayaran agar kode klaim voucher Google AI Pro resmi Anda langsung terbuka otomatis.</div>
+                <div class="pending-banner-sub">Selesaikan pembayaran agar kode klaim voucher Google AI Pro resmi Anda
+                  langsung terbuka otomatis.</div>
               </div>
             </div>
 
@@ -119,7 +134,8 @@
             <!-- Action Button: Bayar Sekarang (Popup) -->
             <div class="payment-action-buttons" style="margin-bottom: 0;">
               <button class="btn-pay-now" id="reopenBqModalBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round">
                   <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                   <line x1="1" y1="10" x2="23" y2="10"></line>
                 </svg>
@@ -128,7 +144,8 @@
             </div>
 
             <!-- Hidden simulator trigger for testing -->
-            <button class="sim-trigger-btn" id="simulatePayBtn" style="display: none;" title="Klik untuk simulasi bayar instan">
+            <button class="sim-trigger-btn" id="simulatePayBtn" style="display: none;"
+              title="Klik untuk simulasi bayar instan">
               ⚡ <span>Simulasikan Bayar Berhasil (Sandbox Test)</span>
             </button>
           </div>
@@ -158,7 +175,9 @@
             <div class="voucher-delivery-box">
               <div class="voucher-delivery-label">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                  </path>
                 </svg>
                 VOUCHER GOOGLE AI PRO SIAP DIKLAIM:
               </div>
@@ -178,7 +197,8 @@
               </button>
 
               <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; text-align: center;">
-                💡 <em>Klik tombol klaim di atas untuk langsung membuka link aktivasi Google AI Pro resmi di akun Google Anda.</em>
+                💡 <em>Klik tombol klaim di atas untuk langsung membuka link aktivasi Google AI Pro resmi di akun Google
+                  Anda.</em>
               </div>
             </div>
           </div>
@@ -187,20 +207,23 @@
 
         <!-- RIGHT COLUMN (Order Details, Struk, and Actions) -->
         <div class="col-right" id="receiptPrintArea">
-          
+
           <!-- Store Badge -->
           <div class="store-badge">
-            <img id="storeLogoImg" src="/images/logo.png" alt="Logo" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; display: none;" onerror="this.style.display='none'">
+            <img id="storeLogoImg" src="/images/logo.png" alt="Logo"
+              style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; display: none;"
+              onerror="this.style.display='none'">
             <div class="store-avatar" id="storeAvatar">MB</div>
             <span id="merchantBadgeName">mybrotools</span>
             <svg class="verified" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
           </div>
 
           <!-- Price Display -->
           <div class="price-display" id="displayAmount">Rp 75.000</div>
-          
+
           <div class="payment-method-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="5" width="20" height="14" rx="2"></rect>
@@ -256,7 +279,9 @@
             <div class="receipt-row">
               <span class="label">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  <path
+                    d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                  </path>
                 </svg>
                 No. WhatsApp
               </span>
@@ -320,7 +345,8 @@
             <div class="store-avatar" style="width: 24px; height: 24px; font-size: 0.72rem;">MB</div>
             <span>mybrotools</span>
             <svg class="verified" viewBox="0 0 24 24" fill="#6366f1" style="width: 14px; height: 14px;">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
           </div>
           <div class="bq-status-pill">
@@ -335,7 +361,8 @@
       <div class="bq-iframe-container">
         <div id="bqIframeLoader" class="bq-iframe-loader">
           <div class="spinner"></div>
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px; font-weight: 600;">Memuat Halaman Pembayaran QRIS Resmi...</div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 10px; font-weight: 600;">Memuat Halaman Pembayaran
+            QRIS Resmi...</div>
         </div>
         <iframe id="bqIframe" src="" frameborder="0" allowfullscreen></iframe>
       </div>
@@ -355,4 +382,5 @@
 
   <script src="/js/app.js"></script>
 </body>
+
 </html>
