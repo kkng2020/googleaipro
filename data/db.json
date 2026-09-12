@@ -78,24 +78,24 @@
     {
       "id": "GAIP-VOUCHER-07",
       "url": "https://one.google.com/promo/ai-pro-sample-7",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
-      "buyerName": "Pelanggan 7890",
+      "orderId": "GAIP-260913-ACZ6A",
+      "soldAt": "2026-09-12T18:39:57.855Z",
+      "buyerName": "Pelanggan 0533",
       "buyerContact": null,
-      "buyerPhone": "081234567890"
+      "buyerPhone": "081381290533"
     },
     {
       "id": "GAIP-VOUCHER-08",
       "url": "https://one.google.com/promo/ai-pro-sample-8",
-      "status": "AVAILABLE",
+      "status": "SOLD",
       "lockedUntil": null,
-      "orderId": null,
-      "soldAt": null,
-      "buyerName": "Pelanggan 6789",
+      "orderId": "GAIP-260913-9XJ5F",
+      "soldAt": "2026-09-12T18:44:20.651Z",
+      "buyerName": "Pelanggan 0533",
       "buyerContact": null,
-      "buyerPhone": "08123456789"
+      "buyerPhone": "081381290533"
     },
     {
       "id": "GAIP-VOUCHER-09",
@@ -111,13 +111,23 @@
     {
       "id": "GAIP-VOUCHER-10",
       "url": "https://one.google.com/promo/ai-pro-sample-10",
-      "status": "LOCKED",
-      "lockedUntil": 1789238322558,
-      "orderId": "GAIP-260913-YDFS4",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
       "soldAt": null,
       "buyerName": "Pelanggan 6789",
       "buyerContact": null,
       "buyerPhone": "08123456789"
+    },
+    {
+      "id": "GAIP-VOUCHER-11",
+      "url": "https://one.google.com/promo/sample-ai-pro-new-link",
+      "status": "AVAILABLE",
+      "lockedUntil": null,
+      "orderId": null,
+      "soldAt": null,
+      "buyerName": null,
+      "buyerPhone": null
     }
   ],
   "orders": [
@@ -360,7 +370,7 @@
       "transactionId": "UVZS-26GL-09KC-133V",
       "amount": 75068,
       "voucherId": "GAIP-VOUCHER-10",
-      "status": "PENDING",
+      "status": "EXPIRED",
       "qrCodeData": "https://app.buatqris.site/poto/qris/UVZS-26GL-09KC-133V.png",
       "qrCodeUrl": "https://app.buatqris.site/poto/qris/UVZS-26GL-09KC-133V.png",
       "paymentUrl": "https://app.buatqris.site/trx/UVZS-26GL-09KC-133V",
@@ -399,6 +409,66 @@
           "updated_at": "2026-09-13T01:34:48+07:00"
         },
         "paidAt": "2026-09-13T01:34:48+07:00"
+      }
+    },
+    {
+      "id": "GAIP-260913-ACZ6A",
+      "transactionId": "N4PY-26QV-096G-13T8",
+      "amount": 75076,
+      "voucherId": "GAIP-VOUCHER-07",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/N4PY-26QV-096G-13T8.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/N4PY-26QV-096G-13T8.png",
+      "paymentUrl": "https://app.buatqris.site/trx/N4PY-26QV-096G-13T8",
+      "customerName": "Pelanggan 0533",
+      "customerPhone": "081381290533",
+      "createdAt": "2026-09-12T18:39:21.913Z",
+      "expiresAt": "2026-09-12T19:39:20.000Z",
+      "paidAt": "2026-09-12T18:39:57.855Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "provider": "buatqris",
+        "statusCheck": {
+          "transaction_id": "N4PY-26QV-096G-13T8",
+          "status": "success",
+          "amount": 75000,
+          "total_amount": 75076,
+          "admin_fee": 1725,
+          "credit_amount": 73275,
+          "qris_method": "test",
+          "updated_at": "2026-09-13T01:39:48+07:00"
+        },
+        "paidAt": "2026-09-13T01:39:48+07:00"
+      }
+    },
+    {
+      "id": "GAIP-260913-9XJ5F",
+      "transactionId": "PDDG-26BD-09AM-13SY",
+      "amount": 75024,
+      "voucherId": "GAIP-VOUCHER-08",
+      "status": "PAID",
+      "qrCodeData": "https://app.buatqris.site/poto/qris/PDDG-26BD-09AM-13SY.png",
+      "qrCodeUrl": "https://app.buatqris.site/poto/qris/PDDG-26BD-09AM-13SY.png",
+      "paymentUrl": "https://app.buatqris.site/trx/PDDG-26BD-09AM-13SY",
+      "customerName": "Pelanggan 0533",
+      "customerPhone": "081381290533",
+      "createdAt": "2026-09-12T18:40:30.616Z",
+      "expiresAt": "2026-09-12T19:40:29.000Z",
+      "paidAt": "2026-09-12T18:44:20.651Z",
+      "provider": "buatqris",
+      "paymentDetails": {
+        "provider": "buatqris",
+        "statusCheck": {
+          "transaction_id": "PDDG-26BD-09AM-13SY",
+          "status": "success",
+          "amount": 75000,
+          "total_amount": 75024,
+          "admin_fee": 1725,
+          "credit_amount": 73275,
+          "qris_method": "test",
+          "updated_at": "2026-09-13T01:44:11+07:00"
+        },
+        "paidAt": "2026-09-13T01:44:11+07:00"
       }
     }
   ]

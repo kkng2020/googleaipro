@@ -9,46 +9,217 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
+      --bg: #0b0f19;
+      --card: #151e32;
+      --card-inner: #0f1626;
+      --border: #23324d;
       --primary: #6366f1;
+      --primary-hover: #4f46e5;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
       --wa-green: #25d366;
       --text: #f8fafc;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }
-    .container { max-width: 980px; margin: 0 auto; display: none; } /* Hidden until authenticated */
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-    .nav-links { display: flex; align-items: center; gap: 12px; }
-    .nav-links a { color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.9rem; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
-    .stat-val { font-size: 1.8rem; font-weight: 800; margin-top: 4px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
-    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    th { color: var(--text-muted); font-size: 0.74rem; text-transform: uppercase; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; }
-    .badge.available { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .badge.locked { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .badge.sold { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
-    input[type="text"], input[type="password"] { width: 100%; padding: 8px 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #fff; font-size: 0.82rem; }
-    .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: #4f46e5; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-    .btn-outline:hover { background: var(--border); color: #fff; }
-    .btn-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--danger); }
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.4); }
+    .container { max-width: 1040px; margin: 0 auto; display: none; } /* Hidden until authenticated */
     
-    /* WhatsApp Box Styling */
+    /* Top Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-badge {
+      font-size: 0.7rem;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      padding: 2px 8px;
+      border-radius: 99px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 700;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.86rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success { background: #059669; color: #fff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
+    .btn-success:hover { background: #047857; }
+    .btn-outline { background: var(--card-inner); border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-outline:hover { background: var(--border); color: #fff; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+    .btn-sm { padding: 5px 10px; font-size: 0.76rem; border-radius: 7px; }
+
+    /* Stats KPI Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: #3b82f6; }
+    .stat-label { color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 1.85rem; font-weight: 800; margin-top: 6px; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .card-title-box h2 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card-inner);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th {
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(15, 23, 42, 0.6);
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .badge.available { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge.locked { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge.sold { background: rgba(99, 102, 241, 0.18); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); }
+    .badge.paid { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0b1120;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    /* Lock Badge & Notice */
+    .locked-card-notice {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #c7d2fe;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* WhatsApp Bot Box */
     .wa-card {
       display: flex;
       align-items: center;
@@ -72,22 +243,22 @@
       font-size: 0.85rem;
     }
     .wa-status-badge.connected {
-      background: rgba(37, 211, 102, 0.2);
+      background: rgba(37, 211, 102, 0.15);
       color: #25d366;
-      border: 1px solid rgba(37, 211, 102, 0.4);
+      border: 1px solid rgba(37, 211, 102, 0.35);
     }
     .wa-status-badge.waiting {
-      background: rgba(245, 158, 11, 0.2);
+      background: rgba(245, 158, 11, 0.15);
       color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.4);
+      border: 1px solid rgba(245, 158, 11, 0.35);
     }
 
     /* Auth Gate Overlay */
     #authOverlay {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(8px);
+      background: rgba(11, 15, 25, 0.96);
+      backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -97,25 +268,17 @@
     .auth-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 32px 28px;
+      border-radius: 20px;
+      padding: 34px 30px;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
       text-align: center;
     }
-    .auth-title {
-      font-size: 1.4rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    .auth-sub {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-bottom: 22px;
-    }
+    .auth-title { font-size: 1.45rem; font-weight: 800; margin-bottom: 6px; }
+    .auth-sub { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 22px; }
     .auth-error {
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.15);
       border: 1px solid var(--danger);
       color: #f87171;
       padding: 8px 12px;
@@ -124,6 +287,44 @@
       margin-bottom: 14px;
       display: none;
     }
+
+    /* Add Voucher Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+    .modal-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 26px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .modal-close-btn:hover { color: #fff; }
   </style>
 </head>
 <body>
@@ -131,18 +332,20 @@
   <!-- Auth Gate Modal -->
   <div id="authOverlay">
     <div class="auth-card">
-      <div style="font-size: 2.2rem; margin-bottom: 10px;">🔐</div>
+      <div style="font-size: 2.2rem; margin-bottom: 12px;">🔐</div>
       <div class="auth-title">Admin Dashboard</div>
-      <div class="auth-sub">mybrotools • Panel Kelola Voucher</div>
+      <div class="auth-sub">mybrotools • Panel Kelola Voucher Google AI Pro</div>
 
       <div id="authError" class="auth-error"></div>
 
       <form id="loginForm" onsubmit="handleLogin(event)">
-        <div style="margin-bottom: 16px; text-align: left;">
+        <div style="margin-bottom: 18px; text-align: left;">
           <label style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: block;">PASSWORD ADMIN</label>
           <input type="password" id="adminPasswordInput" placeholder="Masukkan password admin..." style="padding: 12px; font-size: 0.9rem;" required autofocus>
         </div>
-        <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; padding: 12px; font-size: 0.95rem;">Buka Dashboard</button>
+        <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; padding: 12px; font-size: 0.95rem; justify-content: center;">
+          Buka Dashboard
+        </button>
       </form>
     </div>
   </div>
@@ -150,27 +353,65 @@
   <!-- Main Admin Dashboard (Unlocked after Auth) -->
   <div class="container" id="adminContainer">
     <header>
-      <div>
-        <h1>
-          <span>⚡ mybrotools Admin</span>
-          <span style="font-size: 0.75rem; background: #312e81; color: #c7d2fe; padding: 2px 8px; border-radius: 99px;">Google AI Pro</span>
-        </h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Kelola Voucher, Koneksi WhatsApp Baileys & Penjualan</p>
+      <div class="header-brand">
+        <div class="brand-avatar">MB</div>
+        <div>
+          <div class="brand-title">
+            <span>mybrotools Admin</span>
+            <span class="brand-badge">Official Store</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 3px;">
+            Google AI Pro Voucher Management & Cloud Inventory
+          </p>
+        </div>
       </div>
-      <div class="nav-links">
-        <a href="/" target="_blank">↗ Buka Halaman Pembeli</a>
-        <button class="btn btn-outline" onclick="handleLogout()" style="padding: 6px 12px; font-size: 0.8rem;">🔒 Logout</button>
+      <div class="nav-actions">
+        <button class="btn btn-primary" onclick="openAddVoucherModal()">
+          <span>+</span> Tambah Voucher Baru
+        </button>
+        <a href="/" target="_blank" class="btn btn-outline">
+          <span>↗</span> Halaman Pembeli
+        </a>
+        <button class="btn btn-outline" onclick="handleLogout()">
+          <span>🔒</span> Logout
+        </button>
       </div>
     </header>
 
+    <!-- Stats KPI Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Semua Voucher</div>
+        <div class="stat-val" style="color: #60a5fa;" id="statTotal">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Voucher Tersedia</div>
+        <div class="stat-val" style="color: var(--success);" id="statAvailable">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sedang Di-Hold</div>
+        <div class="stat-val" style="color: var(--warning);" id="statLocked">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Terjual (Lunas)</div>
+        <div class="stat-val" style="color: var(--primary);" id="statSold">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Omset Penjualan</div>
+        <div class="stat-val" style="color: #38bdf8;" id="statRevenue">Rp 0</div>
+      </div>
+    </div>
+
     <!-- WhatsApp Baileys Status Card -->
-    <div class="card" style="border-left: 4px solid var(--wa-green);">
-      <div class="card-title">
-        <span style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.2rem;">📱</span>
-          <span>Status WhatsApp Bot (Baileys - Auto Kirim Link ke Pembeli)</span>
-        </span>
-        <button class="btn btn-danger" id="waLogoutBtn" style="display: none;">Putuskan Sesi WhatsApp</button>
+    <div class="card" style="border-left: 4px solid var(--wa-green); padding: 18px 22px;">
+      <div class="card-header" style="margin-bottom: 10px;">
+        <div class="card-title-box">
+          <h2>
+            <span style="font-size: 1.25rem;">📱</span>
+            <span>Status Bot WhatsApp (Baileys)</span>
+          </h2>
+        </div>
+        <button class="btn btn-danger btn-sm" id="waLogoutBtn" style="display: none;">Putuskan Sesi WhatsApp</button>
       </div>
 
       <div class="wa-card">
@@ -178,89 +419,168 @@
           <div id="waStatusBadge" class="wa-status-badge waiting">
             <span>● Memeriksa status WhatsApp...</span>
           </div>
-          <p id="waStatusDesc" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; max-width: 480px; line-height: 1.5;">
-            WhatsApp ini akan digunakan server untuk <strong>otomatis mengirim link voucher & history langsung ke nomor pembeli</strong> detik itu juga begitu pembayaran QRIS lunas.
+          <p id="waStatusDesc" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; max-width: 560px; line-height: 1.45;">
+            Bot ini otomatis mengirimkan link pembayaran dan struk voucher Google AI Pro langsung ke nomor pembeli begitu pembayaran QRIS lunas.
           </p>
         </div>
 
         <div id="waQrContainer" style="display: none; text-align: center;">
           <div class="wa-qr-box">
-            <img id="waQrImage" src="" alt="Scan QR WhatsApp" style="width: 170px; height: 170px; display: block;">
+            <img id="waQrImage" src="" alt="Scan QR WhatsApp" style="width: 150px; height: 150px; display: block;">
           </div>
-          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">Buka WhatsApp > Perangkat Tertaut > Scan QR</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 5px;">Buka WA > Perangkat Tertaut > Scan QR</div>
         </div>
       </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Voucher Tersedia</div>
-        <div class="stat-val" style="color: var(--success);" id="statAvailable">--</div>
-      </div>
-      <div class="stat-card">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Sedang Di-Hold</div>
-        <div class="stat-val" style="color: var(--warning);" id="statLocked">--</div>
-      </div>
-      <div class="stat-card">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Terjual / Lunas</div>
-        <div class="stat-val" style="color: var(--primary);" id="statSold">--</div>
-      </div>
-      <div class="stat-card">
-        <div style="color: var(--text-muted); font-size: 0.8rem;">Total Pendapatan</div>
-        <div class="stat-val" style="color: #38bdf8;" id="statRevenue">Rp 0</div>
-      </div>
-    </div>
-
-    <!-- Voucher Management Card -->
+    <!-- TABEL 1: STOK VOUCHER SIAP JUAL (AVAILABLE & LOCKED) -->
     <div class="card">
-      <div class="card-title">
-        <span>Daftar 10 URL Voucher Google AI Pro</span>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-danger" id="resetBtn">Reset ke AVAILABLE</button>
-          <button class="btn btn-primary" id="saveVouchersBtn">💾 Simpan Perubahan URL</button>
+      <div class="card-header">
+        <div class="card-title-box">
+          <h2>
+            <span>📦 Stok Voucher Siap Jual</span>
+            <span class="badge available" id="badgeAvailableCount">0 Siap Jual</span>
+          </h2>
+          <p class="card-subtitle">
+            Daftar voucher Google AI Pro aktif yang siap dikirimkan otomatis ke pembeli baru berikutnya.
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="openAddVoucherModal()">
+            <span>+</span> Tambah Voucher Baru
+          </button>
+          <button class="btn btn-success" id="saveAvailableVouchersBtn">
+            💾 Simpan Perubahan URL
+          </button>
         </div>
       </div>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
-        Masukkan 10 URL klaim voucher Google AI Pro milikmu di kolom input berikut, lalu klik <strong>Simpan Perubahan URL</strong> (Tersimpan aman di database Supabase).
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 16%;">Slot / ID</th>
+              <th style="width: 14%;">Status</th>
+              <th style="width: 58%;">URL Klaim Voucher Google AI Pro</th>
+              <th style="width: 12%; text-align: center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="availableVoucherTableBody">
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">Memuat data voucher...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABEL 2: BRANKAS RIWAYAT VOUCHER TERJUAL (LUNAS - TERKUNCI PERMANEN) -->
+    <div class="card" style="border-top: 3px solid #6366f1;">
+      <div class="card-header">
+        <div class="card-title-box">
+          <h2>
+            <span>🔒 Brankas Voucher Terjual (Lunas)</span>
+            <span class="badge sold" id="badgeSoldCount">0 Terjual</span>
+          </h2>
+          <p class="card-subtitle">
+            Voucher yang sudah dibeli pelanggan. <strong>Terkunci secara permanen</strong> dan aman dari pengeditan atau penggunaan ulang.
+          </p>
+        </div>
+      </div>
+
+      <div class="locked-card-notice">
+        <span style="font-size: 1.1rem;">🛡️</span>
+        <span>
+          <strong>Keamanan Terjamin:</strong> Voucher di bawah ini sudah dikirimkan ke pembeli dan terkunci permanen agar tidak bisa diedit atau dipakai orang lain.
+        </span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 14%;">Slot / ID</th>
+              <th style="width: 18%;">No. Pesanan</th>
+              <th style="width: 18%;">WhatsApp Pembeli</th>
+              <th style="width: 32%;">URL Voucher Resmi</th>
+              <th style="width: 18%;">Waktu Terjual</th>
+            </tr>
+          </thead>
+          <tbody id="soldVoucherTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">Belum ada voucher yang terjual.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABEL 3: RIWAYAT TRANSAKSI PESANAN -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title-box">
+          <h2>
+            <span>📋 Riwayat Semua Transaksi Pesanan</span>
+          </h2>
+          <p class="card-subtitle">Log riwayat order pembelian dari customer di web mybrotools.</p>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Waktu</th>
+              <th>WhatsApp Pembeli</th>
+              <th>Nominal</th>
+              <th>Status</th>
+              <th>Voucher Terkait</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: TAMBAH VOUCHER BARU -->
+  <div id="addVoucherModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <span>✨</span> Tambah Stok Voucher Baru
+        </h3>
+        <button class="modal-close-btn" onclick="closeAddVoucherModal()">&times;</button>
+      </div>
+      
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.45;">
+        Masukkan URL link klaim Google AI Pro resmi (contoh: <code>https://one.google.com/promo/...</code>).<br>
+        Anda bisa memasukkan <strong>satu URL</strong> atau <strong>banyak URL sekaligus</strong> (pisahkan 1 URL per baris).
       </p>
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 14%;">Slot</th>
-            <th style="width: 14%;">Status</th>
-            <th style="width: 46%;">URL Klaim Voucher Google AI Pro</th>
-            <th style="width: 26%;">Pembeli (WhatsApp)</th>
-          </tr>
-        </thead>
-        <tbody id="voucherTableBody"></tbody>
-      </table>
-    </div>
+      <form id="addVoucherForm" onsubmit="handleAddVouchers(event)">
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">
+            URL PROMO VOUCHER (1 PER BARIS)
+          </label>
+          <textarea id="newVoucherUrlsInput" rows="6" placeholder="https://one.google.com/promo/sample-link-1&#10;https://one.google.com/promo/sample-link-2&#10;https://one.google.com/promo/sample-link-3" required></textarea>
+        </div>
 
-    <!-- Orders History Card -->
-    <div class="card">
-      <div class="card-title">
-        <span>Riwayat Pesanan Terbaru</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Waktu</th>
-            <th>WhatsApp Pembeli</th>
-            <th>Nominal</th>
-            <th>Status</th>
-            <th>Voucher Diberikan</th>
-          </tr>
-        </thead>
-        <tbody id="ordersTableBody"></tbody>
-      </table>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeAddVoucherModal()">Batal</button>
+          <button type="submit" class="btn btn-primary" id="saveNewVoucherBtn">
+            💾 Simpan ke Stok
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
   <script>
-    let currentVouchers = [];
+    let allVouchers = [];
+    let availableVouchers = [];
+    let soldVouchers = [];
 
     function getAdminToken() {
       return sessionStorage.getItem('mybrotools_admin_token') || '';
@@ -358,27 +678,106 @@
         const json = await res.json();
         if (json.success) {
           const { vouchers, orders, stats } = json.data;
-          currentVouchers = vouchers;
+          allVouchers = vouchers;
 
+          // Split vouchers into Available (AVAILABLE or LOCKED) and Sold (SOLD)
+          availableVouchers = vouchers.filter(v => v.status !== 'SOLD');
+          soldVouchers = vouchers.filter(v => v.status === 'SOLD');
+
+          // Update Stats
+          document.getElementById('statTotal').innerText = vouchers.length;
           document.getElementById('statAvailable').innerText = stats.available;
           document.getElementById('statLocked').innerText = stats.locked;
           document.getElementById('statSold').innerText = stats.sold;
           document.getElementById('statRevenue').innerText = 'Rp ' + (stats.sold * (stats.settings.price || 75000)).toLocaleString('id-ID');
 
-          const vTbody = document.getElementById('voucherTableBody');
-          vTbody.innerHTML = vouchers.map((v, i) => `
-            <tr>
-              <td style="font-weight: 700; font-family: monospace;">${v.id}</td>
-              <td><span class="badge ${v.status.toLowerCase()}">${v.status}</span></td>
-              <td>
-                <input type="text" value="${v.url || ''}" data-index="${i}" class="voucher-url-input" placeholder="https://one.google.com/promo/...">
-              </td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">
-                ${v.status === 'SOLD' ? `Lunas: <strong style="color: #38bdf8;">${v.buyerPhone || 'Pembeli'}</strong>` : (v.status === 'LOCKED' ? `Di-hold: ${v.orderId}` : 'Siap Dijual')}
-              </td>
-            </tr>
-          `).join('');
+          document.getElementById('badgeAvailableCount').innerText = `${availableVouchers.length} Siap Jual`;
+          document.getElementById('badgeSoldCount').innerText = `${soldVouchers.length} Terjual`;
 
+          // Render Tabel 1: Stok Voucher Siap Jual
+          const availTbody = document.getElementById('availableVoucherTableBody');
+          if (availableVouchers.length === 0) {
+            availTbody.innerHTML = `
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 28px;">
+                  ❌ Stok voucher siap jual habis! Klik <strong>+ Tambah Voucher Baru</strong> untuk menambahkan stok.
+                </td>
+              </tr>
+            `;
+          } else {
+            availTbody.innerHTML = availableVouchers.map((v, i) => `
+              <tr>
+                <td style="font-weight: 800; font-family: monospace; color: #818cf8;">${v.id}</td>
+                <td>
+                  <span class="badge ${v.status.toLowerCase()}">
+                    ${v.status === 'LOCKED' ? '⏳ DI-HOLD' : '🟢 SIAP JUAL'}
+                  </span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="text" value="${v.url || ''}" data-id="${v.id}" class="avail-voucher-input" placeholder="https://one.google.com/promo/..." style="font-family: monospace; font-size: 0.82rem;">
+                    ${v.url ? `<a href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka URL">↗</a>` : ''}
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <button class="btn btn-danger btn-sm" onclick="handleDeleteVoucher('${v.id}')" title="Hapus Voucher ini">
+                    🗑 Hapus
+                  </button>
+                </td>
+              </tr>
+            `).join('');
+          }
+
+          // Render Tabel 2: Brankas Voucher Terjual (Locked & Protected)
+          const soldTbody = document.getElementById('soldVoucherTableBody');
+          if (soldVouchers.length === 0) {
+            soldTbody.innerHTML = `
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                  Belum ada voucher yang terbeli / lunas.
+                </td>
+              </tr>
+            `;
+          } else {
+            soldTbody.innerHTML = soldVouchers.slice().reverse().map(v => {
+              const cleanPhone = (v.buyerPhone || '').replace(/[^0-9]/g, '');
+              const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone}` : null;
+              const formattedDate = v.soldAt ? new Date(v.soldAt).toLocaleString('id-ID') : '-';
+
+              return `
+                <tr>
+                  <td style="font-weight: 800; font-family: monospace; color: #a5b4fc;">
+                    ${v.id}
+                  </td>
+                  <td style="font-family: monospace; font-size: 0.8rem; font-weight: 700;">
+                    ${v.orderId || '-'}
+                  </td>
+                  <td>
+                    ${waLink ? `
+                      <a href="${waLink}" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>📱 ${v.buyerPhone}</span>
+                        <span style="font-size: 0.72rem;">↗</span>
+                      </a>
+                    ` : (v.buyerPhone || '-')}
+                  </td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 6px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${v.url || '-'}
+                      </span>
+                      <button class="btn btn-outline btn-sm" onclick="copyToClipboard('${v.url}')" title="Salin Link">📋</button>
+                      ${v.url ? `<a href="${v.url}" target="_blank" class="btn btn-outline btn-sm" title="Buka Link">↗</a>` : ''}
+                    </div>
+                  </td>
+                  <td style="font-size: 0.78rem; color: var(--text-muted);">
+                    ${formattedDate}
+                  </td>
+                </tr>
+              `;
+            }).join('');
+          }
+
+          // Render Tabel 3: Riwayat Orders
           const oTbody = document.getElementById('ordersTableBody');
           if (orders.length === 0) {
             oTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Belum ada pesanan masuk.</td></tr>';
@@ -390,15 +789,147 @@
                 <td style="font-weight: 600; color: #38bdf8;">${o.customerPhone || '-'}</td>
                 <td>Rp ${Number(o.amount).toLocaleString('id-ID')}</td>
                 <td><span class="badge ${o.status.toLowerCase()}">${o.status}</span></td>
-                <td style="font-family: monospace; font-size: 0.78rem;">${o.voucherId || '-'}</td>
+                <td style="font-family: monospace; font-size: 0.78rem; color: #a5b4fc;">${o.voucherId || '-'}</td>
               </tr>
             `).join('');
           }
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error loading admin data:', err);
       }
     }
+
+    // Copy to clipboard helper
+    function copyToClipboard(text) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Link voucher berhasil disalin!');
+      });
+    }
+
+    // Modal Add Voucher
+    function openAddVoucherModal() {
+      document.getElementById('newVoucherUrlsInput').value = '';
+      document.getElementById('addVoucherModal').style.display = 'flex';
+      document.getElementById('newVoucherUrlsInput').focus();
+    }
+
+    function closeAddVoucherModal() {
+      document.getElementById('addVoucherModal').style.display = 'none';
+    }
+
+    async function handleAddVouchers(e) {
+      e.preventDefault();
+      const rawText = document.getElementById('newVoucherUrlsInput').value;
+      const urls = rawText.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+
+      if (urls.length === 0) {
+        alert('Mohon masukkan minimal 1 URL klaim promo voucher');
+        return;
+      }
+
+      const btn = document.getElementById('saveNewVoucherBtn');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        const res = await fetch('/api/admin/vouchers/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': getAdminToken()
+          },
+          body: JSON.stringify({ urls })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert(`✅ ${data.message}`);
+          closeAddVoucherModal();
+          loadAdminData();
+        } else {
+          alert(`❌ Gagal: ${data.error || 'Terjadi kesalahan'}`);
+        }
+      } catch (err) {
+        alert(`❌ Gagal: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '💾 Simpan ke Stok';
+      }
+    }
+
+    async function handleDeleteVoucher(voucherId) {
+      if (!confirm(`Yakin ingin menghapus voucher ${voucherId} dari stok siap jual?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/vouchers/${voucherId}`, {
+          method: 'DELETE',
+          headers: {
+            'x-admin-token': getAdminToken()
+          }
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert(`✅ ${data.message}`);
+          loadAdminData();
+        } else {
+          alert(`❌ Gagal menghapus: ${data.error || 'Terjadi kesalahan'}`);
+        }
+      } catch (err) {
+        alert(`❌ Gagal menghapus: ${err.message}`);
+      }
+    }
+
+    // Save modified URLs in Available Table
+    document.getElementById('saveAvailableVouchersBtn').addEventListener('click', async () => {
+      const inputs = document.querySelectorAll('.avail-voucher-input');
+      const updatedList = [];
+
+      inputs.forEach(inp => {
+        const id = inp.getAttribute('data-id');
+        const url = inp.value.trim();
+        const existing = allVouchers.find(v => v.id === id);
+        if (existing) {
+          updatedList.push({
+            ...existing,
+            url
+          });
+        }
+      });
+
+      // Keep sold vouchers intact
+      soldVouchers.forEach(sv => updatedList.push(sv));
+
+      const btn = document.getElementById('saveAvailableVouchersBtn');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+
+      try {
+        const res = await fetch('/api/admin/vouchers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': getAdminToken()
+          },
+          body: JSON.stringify({ vouchers: updatedList })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Perubahan URL voucher berhasil disimpan ke database Supabase!');
+          loadAdminData();
+        } else {
+          alert('❌ Gagal menyimpan: ' + (data.error || 'Terjadi kesalahan'));
+        }
+      } catch (err) {
+        alert('❌ Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '💾 Simpan Perubahan URL';
+      }
+    });
 
     async function checkWhatsAppStatus() {
       try {
@@ -417,7 +948,7 @@
           if (status === 'CONNECTED') {
             badge.className = 'wa-status-badge connected';
             badge.innerHTML = `✅ WhatsApp Terhubung (+${connectedNumber}) - mybrotools`;
-            desc.innerHTML = `WhatsApp sudah aktif dan siap mengirimkan link voucher serta riwayat pembelian secara otomatis ke pembeli begitu pembayaran lunas.`;
+            desc.innerHTML = `Bot aktif: Otomatis mengirimkan link voucher & struk ke WhatsApp pembeli begitu pembayaran lunas.`;
             qrBox.style.display = 'none';
             logoutBtn.style.display = 'inline-block';
           } else if (status === 'SCAN_QR' && qrCodeUrl) {
@@ -439,46 +970,6 @@
       }
     }
 
-    document.getElementById('saveVouchersBtn').addEventListener('click', async () => {
-      const inputs = document.querySelectorAll('.voucher-url-input');
-      inputs.forEach(inp => {
-        const idx = parseInt(inp.getAttribute('data-index'), 10);
-        if (currentVouchers[idx]) {
-          currentVouchers[idx].url = inp.value.trim();
-        }
-      });
-
-      const res = await fetch('/api/admin/vouchers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-token': getAdminToken()
-        },
-        body: JSON.stringify({ vouchers: currentVouchers })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('Berhasil menyimpan URL 10 voucher ke Supabase!');
-        loadAdminData();
-      } else {
-        alert('Gagal menyimpan: ' + (data.error || 'Terjadi kesalahan'));
-      }
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-      if (confirm('Yakin ingin mereset semua voucher ke status AVAILABLE?')) {
-        const res = await fetch('/api/admin/reset', {
-          method: 'POST',
-          headers: { 'x-admin-token': getAdminToken() }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('Semua voucher berhasil direset ke AVAILABLE!');
-          loadAdminData();
-        }
-      }
-    });
-
     document.getElementById('waLogoutBtn').addEventListener('click', async () => {
       if (confirm('Yakin ingin memutuskan koneksi WhatsApp ini?')) {
         const res = await fetch('/api/admin/whatsapp/logout', {
@@ -490,6 +981,13 @@
           alert('Sesi WhatsApp diputuskan. Silakan scan ulang jika ingin menghubungkan lagi.');
           checkWhatsAppStatus();
         }
+      }
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAddVoucherModal();
       }
     });
 

@@ -477,9 +477,22 @@ class StockManager {
   }
 
   static async updateVouchers(vouchers) {
+    const localData = readData();
+    const existingMap = new Map(localData.vouchers.map(v => [v.id, v]));
+
+    // Strictly protect SOLD vouchers from modification
+    const safeVouchersToUpdate = vouchers.filter(v => {
+      const existing = existingMap.get(v.id);
+      if (existing && existing.status === 'SOLD') {
+        console.warn(`[StockManager] Voucher ${v.id} is SOLD and locked. Modification rejected.`);
+        return false;
+      }
+      return true;
+    });
+
     if (isConfigured()) {
       try {
-        for (const v of vouchers) {
+        for (const v of safeVouchersToUpdate) {
           await supabase
             .from('vouchers')
             .upsert({
@@ -494,10 +507,116 @@ class StockManager {
       }
     }
 
-    const localData = readData();
-    localData.vouchers = vouchers;
+    // Apply updates locally only to non-SOLD vouchers
+    for (const v of safeVouchersToUpdate) {
+      const idx = localData.vouchers.findIndex(item => item.id === v.id);
+      if (idx !== -1) {
+        // Ensure status doesn't revert a sold voucher
+        if (localData.vouchers[idx].status !== 'SOLD') {
+          localData.vouchers[idx].url = v.url || localData.vouchers[idx].url;
+        }
+      }
+    }
+
     writeData(localData);
     return localData.vouchers;
+  }
+
+  static async addVouchers(urls) {
+    if (!Array.isArray(urls) || urls.length === 0) {
+      throw new Error('Daftar URL voucher tidak boleh kosong');
+    }
+
+    const cleanUrls = urls
+      .map(u => (typeof u === 'string' ? u.trim() : ''))
+      .filter(u => u.length > 0);
+
+    if (cleanUrls.length === 0) {
+      throw new Error('Tidak ada URL voucher valid yang dimasukkan');
+    }
+
+    const localData = readData();
+
+    // Find highest existing voucher numeric suffix
+    let maxNum = 0;
+    for (const v of localData.vouchers) {
+      const match = String(v.id).match(/(\d+)$/);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxNum) maxNum = n;
+      }
+    }
+
+    const newVouchers = [];
+    for (let i = 0; i < cleanUrls.length; i++) {
+      maxNum++;
+      const id = `GAIP-VOUCHER-${String(maxNum).padStart(2, '0')}`;
+      const newVoucher = {
+        id,
+        url: cleanUrls[i],
+        status: 'AVAILABLE',
+        lockedUntil: null,
+        orderId: null,
+        soldAt: null,
+        buyerName: null,
+        buyerPhone: null
+      };
+      newVouchers.push(newVoucher);
+      localData.vouchers.push(newVoucher);
+    }
+
+    writeData(localData);
+
+    if (isConfigured()) {
+      try {
+        for (const v of newVouchers) {
+          await supabase.from('vouchers').insert({
+            id: v.id,
+            url: v.url,
+            status: 'AVAILABLE',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.error('Supabase addVouchers error:', err.message);
+      }
+    }
+
+    return newVouchers;
+  }
+
+  static async deleteVoucher(voucherId) {
+    const localData = readData();
+    const idx = localData.vouchers.findIndex(v => v.id === voucherId);
+
+    if (idx === -1) {
+      throw new Error(`Voucher ${voucherId} tidak ditemukan`);
+    }
+
+    const voucher = localData.vouchers[idx];
+
+    // Strict lock: SOLD vouchers cannot be deleted
+    if (voucher.status === 'SOLD') {
+      throw new Error(`Voucher ${voucherId} sudah terjual kepada pelanggan dan terkunci permanen, tidak boleh dihapus!`);
+    }
+
+    if (voucher.status === 'LOCKED') {
+      throw new Error(`Voucher ${voucherId} sedang di-hold untuk pesanan yang sedang berjalan. Tunggu hingga selesai atau kadaluarsa.`);
+    }
+
+    localData.vouchers.splice(idx, 1);
+    writeData(localData);
+
+    if (isConfigured()) {
+      try {
+        await supabase.from('vouchers').delete().eq('id', voucherId);
+      } catch (err) {
+        console.error('Supabase deleteVoucher error:', err.message);
+      }
+    }
+
+    return { success: true, id: voucherId };
   }
 
   static async resetAllVouchersToAvailable() {

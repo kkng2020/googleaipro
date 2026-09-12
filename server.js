@@ -449,6 +449,37 @@ app.post('/api/admin/vouchers', requireAdminAuth, async (req, res) => {
   }
 });
 
+app.post('/api/admin/vouchers/add', requireAdminAuth, async (req, res) => {
+  try {
+    const { urls } = req.body;
+    const urlList = Array.isArray(urls) ? urls : (req.body.url ? [req.body.url] : []);
+    if (urlList.length === 0) {
+      return res.status(400).json({ success: false, error: 'Masukkan minimal satu URL promo voucher' });
+    }
+    const added = await StockManager.addVouchers(urlList);
+    res.json({
+      success: true,
+      message: `Berhasil menambahkan ${added.length} voucher baru!`,
+      data: added
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/admin/vouchers/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const result = await StockManager.deleteVoucher(req.params.id);
+    res.json({
+      success: true,
+      message: `Voucher ${req.params.id} berhasil dihapus`,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/admin/reset', requireAdminAuth, async (req, res) => {
   try {
     const reset = await StockManager.resetAllVouchersToAvailable();
