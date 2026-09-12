@@ -99,8 +99,16 @@ class BaileysService {
   }
 
   getStatus() {
+    let statusFormatted = 'waiting_qr';
+    if (this.status === 'CONNECTED') {
+      statusFormatted = 'connected';
+    } else if (this.status === 'DISCONNECTED' && !this.qrCodeUrl) {
+      statusFormatted = 'disconnected';
+    }
+
     return {
-      status: this.status,
+      status: statusFormatted,
+      rawStatus: this.status,
       connectedNumber: this.connectedNumber,
       qrCodeUrl: this.qrCodeUrl
     };
