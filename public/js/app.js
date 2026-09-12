@@ -92,11 +92,34 @@ async function fetchStoreInfo() {
   }
 }
 
+function parseBuatQrisDate(dateStr) {
+  if (!dateStr) return Date.now() + 15 * 60 * 1000;
+  if (typeof dateStr === 'number') return dateStr;
+
+  const str = String(dateStr).trim();
+  // If it's already an ISO string with Z or timezone offset
+  if (str.includes('Z') || str.includes('+')) {
+    const parsed = Date.parse(str);
+    if (!isNaN(parsed)) return parsed;
+  }
+
+  // If format is "YYYY-MM-DD HH:mm:ss" or without offset (BuatQris is WIB, UTC+7)
+  const clean = str.replace(' ', 'T');
+  if (!clean.includes('+') && !clean.endsWith('Z')) {
+    const parsedWib = Date.parse(clean + '+07:00');
+    if (!isNaN(parsedWib)) return parsedWib;
+  }
+
+  const parsedGeneral = Date.parse(clean);
+  return isNaN(parsedGeneral) ? Date.now() + 15 * 60 * 1000 : parsedGeneral;
+}
+
 function startCountdown(expiresAt) {
   if (countdownInterval) clearInterval(countdownInterval);
 
-  const target = new Date(expiresAt).getTime();
+  const target = parseBuatQrisDate(expiresAt);
   const timerText = document.getElementById('timerText');
+  const timerTextLarge = document.getElementById('timerTextLarge');
 
   function update() {
     const now = Date.now();
@@ -104,19 +127,39 @@ function startCountdown(expiresAt) {
 
     if (distance <= 0) {
       clearInterval(countdownInterval);
-      timerText.innerText = '00 : 00';
-      timerText.style.color = '#ef4444';
-      document.getElementById('statusAlertBox').className = 'status-alert-box';
-      document.getElementById('statusAlertBox').style.background = '#fef2f2';
-      document.getElementById('statusAlertBox').style.borderColor = '#fecaca';
-      document.getElementById('statusAlertBox').style.color = '#dc2626';
-      document.getElementById('statusAlertText').innerText = 'Waktu pembayaran telah habis. Silakan buat pesanan baru.';
+      if (timerText) {
+        timerText.innerText = '00 : 00';
+        timerText.style.color = '#ef4444';
+      }
+      if (timerTextLarge) {
+        timerTextLarge.innerText = '00 : 00';
+        timerTextLarge.classList.add('warning');
+      }
+      const alertBox = document.getElementById('statusAlertBox');
+      if (alertBox) {
+        alertBox.className = 'status-alert-box';
+        alertBox.style.background = '#fef2f2';
+        alertBox.style.borderColor = '#fecaca';
+        alertBox.style.color = '#dc2626';
+      }
+      const alertText = document.getElementById('statusAlertText');
+      if (alertText) alertText.innerText = 'Waktu pembayaran telah habis. Silakan buat pesanan baru.';
       return;
     }
 
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    timerText.innerText = `${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
+    const formatted = `${String(minutes).padStart(2, '0')} : ${String(seconds).padStart(2, '0')}`;
+
+    if (timerText) timerText.innerText = formatted;
+    if (timerTextLarge) {
+      timerTextLarge.innerText = formatted;
+      if (distance < 120 * 1000) {
+        timerTextLarge.classList.add('warning');
+      } else {
+        timerTextLarge.classList.remove('warning');
+      }
+    }
   }
 
   update();
@@ -138,6 +181,11 @@ function renderOrderView(order) {
   document.getElementById('rincianFee').innerText = `+ ${formatRupiah(order.fee || 0)}`;
   document.getElementById('rincianPhone').innerText = order.customerPhone || '-';
   document.getElementById('displayTime').innerText = formatDateTime(order.createdAt);
+
+  const extTrxBtn = document.getElementById('openExternalTrxBtn');
+  if (extTrxBtn && order.paymentUrl) {
+    extTrxBtn.href = order.paymentUrl;
+  }
 
   if (order.status === 'PAID') {
     closeBuatQrisModal();
@@ -168,6 +216,11 @@ function renderSuccessState(order) {
   if (timerText) {
     timerText.innerText = '-- : --';
     timerText.style.color = 'var(--text-main)';
+  }
+  const timerTextLarge = document.getElementById('timerTextLarge');
+  if (timerTextLarge) {
+    timerTextLarge.innerText = '-- : --';
+    timerTextLarge.classList.remove('warning');
   }
 
   document.getElementById('qrisBox').style.display = 'none';
@@ -429,13 +482,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('downloadStrukBtn').addEventListener('click', handleDownloadStruk);
   document.getElementById('shareBtn').addEventListener('click', handleShare);
 
-  // BuatQris Popup Close Button
+  // BuatQris Popup Close Button (Instant close without blocking confirm)
   document.getElementById('closeBqModalBtn')?.addEventListener('click', () => {
-    if (currentOrder && currentOrder.status !== 'PAID') {
-      if (confirm('Link pembayaran resmi sudah dikirimkan ke WhatsApp Anda. Anda dapat membukanya kapan saja dari WhatsApp. Yakin ingin menutup popup pembayaran ini?')) {
-        closeBuatQrisModal();
-      }
-    } else {
+    closeBuatQrisModal();
+  });
+
+  // Close when clicking overlay backdrop outside modal
+  document.getElementById('bqModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'bqModalOverlay') {
       closeBuatQrisModal();
     }
   });

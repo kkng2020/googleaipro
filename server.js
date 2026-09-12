@@ -143,6 +143,7 @@ app.post('/api/order/create', async (req, res) => {
       qrCodeData: paymentResult.qrCodeData,
       qrCodeUrl: paymentResult.qrCodeUrl,
       paymentUrl: paymentResult.paymentUrl || null,
+      expiresAt: paymentResult.expiredAt || null,
       provider: provider.name
     });
 

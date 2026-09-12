@@ -187,9 +187,26 @@ class StockManager {
     return { voucherId: voucher.id, lockedUntil: lockExpiry };
   }
 
-  static async createOrder({ id, transactionId, amount, customerName, customerPhone, qrCodeData, qrCodeUrl, paymentUrl, provider = 'buatqris' }) {
+  static async createOrder({ id, transactionId, amount, customerName, customerPhone, qrCodeData, qrCodeUrl, paymentUrl, expiresAt, provider = 'buatqris' }) {
     const lockResult = await this.lockNextVoucher(id, customerName, customerPhone);
     const localData = readData();
+
+    // Use provider's exact expired_at if available
+    let orderExpiryIso = new Date(lockResult.lockedUntil).toISOString();
+    if (expiresAt) {
+      try {
+        let s = String(expiresAt).trim();
+        if (s.includes(' ') && !s.includes('T')) {
+          s = s.replace(' ', 'T') + '+07:00';
+        }
+        const parsed = new Date(s);
+        if (!isNaN(parsed.getTime())) {
+          orderExpiryIso = parsed.toISOString();
+        }
+      } catch (e) {
+        console.warn('Expiry parse warning:', e.message);
+      }
+    }
 
     const newOrder = {
       id,
@@ -203,7 +220,7 @@ class StockManager {
       customerName: customerName || 'Pembeli',
       customerPhone: customerPhone || '',
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(lockResult.lockedUntil).toISOString(),
+      expiresAt: orderExpiryIso,
       paidAt: null,
       provider
     };

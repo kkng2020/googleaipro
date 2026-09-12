@@ -111,8 +111,42 @@
           
           <!-- State A: QRIS Display (PENDING) -->
           <div id="qrisBox" class="qris-box">
-            <div class="qris-header-badge">
-              <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; color: #dc2626;">QRIS</span>
+            <!-- Alert Banner: Lakukan pembayaran untuk membuka voucher -->
+            <div class="pending-instruction-banner">
+              <div class="pending-banner-icon">🔒</div>
+              <div class="pending-banner-text">
+                <div class="pending-banner-title">Lakukan Pembayaran untuk Membuka Voucher</div>
+                <div class="pending-banner-sub">Selesaikan pembayaran agar kode klaim voucher Google AI Pro resmi Anda langsung terbuka otomatis.</div>
+              </div>
+            </div>
+
+            <!-- Countdown Timer Real-Time from BuatQris Server -->
+            <div class="realtime-countdown-card">
+              <div class="countdown-header-row">
+                <span class="countdown-label">⏳ SISA WAKTU PEMBAYARAN:</span>
+                <span class="countdown-badge">Server BuatQris</span>
+              </div>
+              <div class="countdown-digits-large" id="timerTextLarge">-- : --</div>
+              <div class="countdown-sync-note">Waktu tersinkronisasi otomatis dengan batas waktu resmi BuatQris</div>
+            </div>
+
+            <!-- Action Buttons: Bayar Sekarang (Popup) & Buka Tab Baru -->
+            <div class="payment-action-buttons">
+              <button class="btn-pay-now" id="reopenBqModalBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+                <span>Bayar Sekarang (Buka Popup)</span>
+              </button>
+              
+              <a href="#" target="_blank" rel="noopener noreferrer" class="btn-open-external" id="openExternalTrxBtn">
+                <span>↗ Buka di Tab Baru / Aplikasi Bank</span>
+              </a>
+            </div>
+
+            <div class="qris-header-badge" style="margin-top: 10px;">
+              <span style="font-weight: 800; font-size: 1.05rem; letter-spacing: 0.5px; color: #dc2626;">QRIS</span>
               <span style="font-size: 0.72rem; margin-left: 6px; font-weight: 700; color: #64748b;">Standar Pembayaran Nasional</span>
             </div>
 
@@ -137,11 +171,8 @@
 
             <!-- Testing Helper / Simulator Trigger -->
             <div style="margin-top: 10px;">
-              <button class="btn-primary" id="reopenBqModalBtn" style="width: 100%; margin-bottom: 8px; padding: 10px; border-radius: 10px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border: none;">
-                <span>↗ Buka Halaman Bayar BuatQris</span>
-              </button>
               <button class="sim-trigger-btn" id="simulatePayBtn" title="Klik untuk simulasi bayar instan">
-                ⚡ <span>Simulasikan Bayar Berhasil (Tes)</span>
+                ⚡ <span>Simulasikan Bayar Berhasil (Sandbox Test)</span>
               </button>
             </div>
           </div>
