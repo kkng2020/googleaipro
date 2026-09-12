@@ -23,8 +23,24 @@ function formatWhatsAppNumber(phone) {
   return cleaned;
 }
 
+function getPublicBaseUrl() {
+  if (process.env.BASE_URL && !process.env.BASE_URL.includes('localhost')) {
+    return process.env.BASE_URL.replace(/\/+$/, '');
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/+$/, '');
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, '');
+  }
+  return 'https://mybrotool.vercel.app';
+}
+
 function buildPaymentInstructionMessage({ orderId, buyerName, total, paymentUrl, orderWebUrl, storeName = 'mybrotools' }) {
-  const webUrl = orderWebUrl || `${process.env.BASE_URL || 'http://localhost:3000'}/?order=${orderId}`;
+  let webUrl = orderWebUrl;
+  if (!webUrl || webUrl.includes('localhost')) {
+    webUrl = `${getPublicBaseUrl()}/?order=${orderId}`;
+  }
   return `Halo Kak ${buyerName || 'Pelanggan'}! 👋
 
 Terima kasih telah memesan *Voucher Google AI Pro* di *${storeName}* ✨
@@ -50,6 +66,10 @@ Jika butuh bantuan, silakan langsung balas pesan ini ya Kak. Terima kasih! 🙏`
 }
 
 function buildThankYouMessage({ orderId, buyerName, amount, voucherUrl, historyUrl, storeName = 'mybrotools' }) {
+  let histUrl = historyUrl;
+  if (!histUrl || histUrl.includes('localhost')) {
+    histUrl = `${getPublicBaseUrl()}/?order=${orderId}`;
+  }
   return `Halo Kak ${buyerName || 'Pelanggan'}! 👋
 
 Terima kasih banyak telah berbelanja di *${storeName}* 🙏✨
@@ -64,7 +84,7 @@ Pembayaran Anda sebesar *Rp ${Number(amount).toLocaleString('id-ID')}* telah kam
 ${voucherUrl}
 
 📄 *LINK HISTORY & BUKTI STRUK:*
-${historyUrl}
+${histUrl}
 
 💡 *PANDUAN KLAIM:*
 1. Buka link klaim di atas pada browser Anda.

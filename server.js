@@ -31,6 +31,27 @@ if (!process.env.VERCEL) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+function getBaseUrl(req) {
+  if (process.env.BASE_URL && !process.env.BASE_URL.includes('localhost')) {
+    return process.env.BASE_URL.replace(/\/+$/, '');
+  }
+  if (req && req.headers) {
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    if (host && !host.includes('localhost')) {
+      return `${proto}://${host}`.replace(/\/+$/, '');
+    }
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/+$/, '');
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, '');
+  }
+  return 'https://mybrotool.vercel.app';
+}
+
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminmybro123';
 const orderLastCheckMap = new Map();
 
@@ -133,6 +154,7 @@ app.post('/api/order/create', async (req, res) => {
     const fee = stockInfo.settings.fee || 0;
     const total = amount + fee;
 
+    const currentBaseUrl = getBaseUrl(req);
     const provider = getPaymentProvider();
     const paymentResult = await provider.createPayment({
       orderId,
@@ -140,7 +162,8 @@ app.post('/api/order/create', async (req, res) => {
       merchantName: stockInfo.settings.merchantName,
       customerName: customerName || 'Pembeli',
       customerPhone: customerPhone.trim(),
-      description: `Google AI Pro - ${orderId}`
+      description: `Google AI Pro - ${orderId}`,
+      appBaseUrl: currentBaseUrl
     });
 
     const order = await StockManager.createOrder({
@@ -158,7 +181,7 @@ app.post('/api/order/create', async (req, res) => {
 
     // Send Payment Link & Order Web URL to Customer WhatsApp simultaneously
     if (paymentResult.paymentUrl) {
-      const orderWebUrl = `${BASE_URL}/?order=${order.id}`;
+      const orderWebUrl = `${currentBaseUrl}/?order=${order.id}`;
       sendPaymentInstructionNotification({
         phone: order.customerPhone,
         orderId: order.id,
@@ -222,7 +245,8 @@ app.get('/api/order/:id', async (req, res) => {
               order.voucherUrl = markResult.voucherUrl;
               order.isPaid = true;
 
-              const historyUrl = `${BASE_URL}/?order=${order.id}`;
+              const currentBaseUrl = getBaseUrl(req);
+              const historyUrl = `${currentBaseUrl}/?order=${order.id}`;
               sendWhatsAppNotification({
                 phone: order.customerPhone,
                 orderId: order.id,
@@ -244,7 +268,8 @@ app.get('/api/order/:id', async (req, res) => {
     let waMessage = null;
 
     if (order.status === 'PAID' && order.voucherUrl) {
-      const historyUrl = `${BASE_URL}/?order=${order.id}`;
+      const currentBaseUrl = getBaseUrl(req);
+      const historyUrl = `${currentBaseUrl}/?order=${order.id}`;
       waMessage = buildThankYouMessage({
         orderId: order.id,
         buyerName: order.customerName,
@@ -281,7 +306,8 @@ app.post('/api/order/:id/simulate-pay', async (req, res) => {
       paidAt: new Date().toISOString()
     });
 
-    const historyUrl = `${BASE_URL}/?order=${orderId}`;
+    const currentBaseUrl = getBaseUrl(req);
+    const historyUrl = `${currentBaseUrl}/?order=${orderId}`;
     const waResult = await sendWhatsAppNotification({
       phone: result.order.customerPhone,
       orderId,
@@ -342,7 +368,8 @@ app.post('/api/webhook/buatqris', async (req, res) => {
       console.log(`✅ Order ${result.order.id} marked as PAID! Voucher assigned.`);
 
       // Trigger automatic WhatsApp notification to buyer
-      const historyUrl = `${BASE_URL}/?order=${result.order.id}`;
+      const currentBaseUrl = getBaseUrl(req);
+      const historyUrl = `${currentBaseUrl}/?order=${result.order.id}`;
       await sendWhatsAppNotification({
         phone: result.order.customerPhone,
         orderId: result.order.id,
@@ -381,7 +408,8 @@ app.post('/api/webhook/doku', async (req, res) => {
       });
       console.log(`✅ Order ${invoiceNumber} marked as PAID via DOKU webhook!`);
 
-      const historyUrl = `${BASE_URL}/?order=${invoiceNumber}`;
+      const currentBaseUrl = getBaseUrl(req);
+      const historyUrl = `${currentBaseUrl}/?order=${invoiceNumber}`;
       await sendWhatsAppNotification({
         phone: result.order.customerPhone,
         orderId: invoiceNumber,

@@ -8,7 +8,7 @@ class BuatQrisPaymentProvider {
     this.secretToken = process.env.BQ_SECRET_TOKEN || '';
     this.signingSecret = process.env.BQ_SIGNING_SECRET || '';
     this.baseUrl = process.env.BQ_BASE_URL || 'https://api.buatqris.site';
-    this.appBaseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    this.appBaseUrl = process.env.BASE_URL || 'https://mybrotool.vercel.app';
     this.testMode = process.env.BQ_TEST_MODE === '1';
   }
 
@@ -16,12 +16,25 @@ class BuatQrisPaymentProvider {
     return Boolean(this.accountId && this.secretToken);
   }
 
-  async createPayment({ orderId, amount, customerName = 'Pembeli', customerPhone = '', description = '' }) {
+  async createPayment({ orderId, amount, customerName = 'Pembeli', customerPhone = '', description = '', appBaseUrl }) {
     if (!this.isConfigured()) {
       throw new Error('BQ_ACCOUNT_ID atau BQ_SECRET_TOKEN belum dikonfigurasi di file .env');
     }
 
-    const callbackUrl = `${this.appBaseUrl.replace(/\/$/, '')}/api/webhook/buatqris`;
+    let baseUrl = appBaseUrl || this.appBaseUrl;
+    if (!baseUrl || baseUrl.includes('localhost')) {
+      if (process.env.BASE_URL && !process.env.BASE_URL.includes('localhost')) {
+        baseUrl = process.env.BASE_URL;
+      } else if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+        baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+      } else if (process.env.VERCEL_URL) {
+        baseUrl = `https://${process.env.VERCEL_URL}`;
+      } else {
+        baseUrl = 'https://mybrotool.vercel.app';
+      }
+    }
+
+    const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/webhook/buatqris`;
     const desc = (description || `Google AI Pro - ${orderId}`).slice(0, 100);
 
     const params = new URLSearchParams({
