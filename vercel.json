@@ -1,14 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "{public/**,admin/**}"
-    }
-  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/api/(.*)",
       "destination": "/api/index.js"
     }
   ]

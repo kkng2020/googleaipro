@@ -1,5 +1,16 @@
 const axios = require('axios');
-const baileys = require('./baileys');
+let baileys = {
+  status: 'DISCONNECTED',
+  sendMessage: async () => ({ success: false })
+};
+
+if (!process.env.VERCEL) {
+  try {
+    baileys = require('./baileys');
+  } catch (err) {
+    console.warn('[WhatsApp Service] Baileys bypass:', err.message);
+  }
+}
 
 function formatWhatsAppNumber(phone) {
   if (!phone) return '';

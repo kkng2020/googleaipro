@@ -11,11 +11,21 @@ const {
   generateWaLink,
   buildThankYouMessage
 } = require('./services/whatsapp');
-const baileys = require('./services/baileys');
+let baileys = {
+  status: 'DISCONNECTED',
+  getStatus: () => ({ status: 'DISCONNECTED', phone: null, serverless: true }),
+  sendMessage: async () => ({ success: false, reason: 'WhatsApp Baileys tidak berjalan di Vercel Serverless' }),
+  logout: async () => ({ success: false, message: 'Tidak tersedia di Vercel Serverless' })
+};
 
 // Initialize Baileys WhatsApp Connection only if not running on Vercel Serverless
 if (!process.env.VERCEL) {
-  baileys.init();
+  try {
+    baileys = require('./services/baileys');
+    baileys.init();
+  } catch (err) {
+    console.warn('[WhatsApp] Baileys bypass:', err.message);
+  }
 }
 
 const app = express();
