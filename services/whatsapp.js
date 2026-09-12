@@ -50,6 +50,7 @@ Berikut adalah link pesanan & pembayaran resmi Anda:
 📋 *RINCIAN PESANAN:*
 • No. Pesanan   : ${orderId}
 • Total Tagihan : Rp ${Number(total).toLocaleString('id-ID')}
+• Batas Waktu   : 5 Menit ⏳
 • Status        : MENUNGGU PEMBAYARAN ⏳
 
 🌐 *LINK HALAMAN PESANAN & VOUCHER ANDA:*
@@ -59,8 +60,9 @@ ${webUrl}
 ${paymentUrl}
 
 💡 *PANDUAN:*
-1. Selesaikan pembayaran melalui link QRIS di atas atau scan QRIS yang tampil di layar.
+1. Selesaikan pembayaran dalam waktu *5 menit* melalui link QRIS di atas atau scan QRIS yang tampil di layar.
 2. Link halaman pesanan Anda (${webUrl}) akan *otomatis berubah menjadi halaman klaim voucher Google AI Pro* begitu pembayaran Anda terverifikasi lunas!
+3. Jika melebihi 5 menit, pesanan kedaluwarsa dan voucher akan dilepas kembali ke stok toko.
 
 Jika butuh bantuan, silakan langsung balas pesan ini ya Kak. Terima kasih! 🙏`;
 }
