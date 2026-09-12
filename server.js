@@ -518,7 +518,16 @@ app.post('/api/admin/reset', requireAdminAuth, async (req, res) => {
 });
 
 app.get('/api/admin/whatsapp/status', (req, res) => {
-  res.json({ success: true, data: baileys.getStatus() });
+  const bStatus = baileys.getStatus();
+  const hasFonnte = Boolean(process.env.FONNTE_TOKEN);
+  res.json({
+    success: true,
+    data: {
+      ...bStatus,
+      hasFonnte,
+      activeProvider: (bStatus.status === 'connected') ? 'baileys' : (hasFonnte ? 'fonnte' : 'none')
+    }
+  });
 });
 
 app.post('/api/admin/whatsapp/logout', requireAdminAuth, async (req, res) => {

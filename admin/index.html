@@ -1195,7 +1195,7 @@
         if (res.status === 401) return;
         const json = await res.json();
         if (json.success) {
-          const { status, connectedNumber, qrCodeUrl, serverless } = json.data || {};
+          const { status, connectedNumber, qrCodeUrl, serverless, hasFonnte } = json.data || {};
           const badge = document.getElementById('waStatusBadge');
           const qrBox = document.getElementById('waQrContainer');
           const qrImg = document.getElementById('waQrImage');
@@ -1203,13 +1203,27 @@
           const resetBtn = document.getElementById('waResetBtn');
           const desc = document.getElementById('waStatusDesc');
 
+          if (hasFonnte && (serverless || (status || '').toLowerCase() !== 'connected')) {
+            badge.className = 'wa-status-badge connected';
+            badge.style.background = 'rgba(16, 185, 129, 0.15)';
+            badge.style.color = '#10b981';
+            badge.innerHTML = `🟢 Cloud Gateway Aktif (Fonnte API)`;
+            if (desc) {
+              desc.innerHTML = `Pesan instruksi bayar dan kode klaim voucher Google AI Pro otomatis terkirim dari cloud 24/7 via Fonnte API Gateway.`;
+            }
+            qrBox.style.display = 'none';
+            if (resetBtn) resetBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            return;
+          }
+
           if (serverless) {
             badge.className = 'wa-status-badge waiting';
             badge.style.background = 'rgba(99, 102, 241, 0.15)';
             badge.style.color = '#818cf8';
             badge.innerHTML = `☁️ Vercel Serverless Mode`;
             if (desc) {
-              desc.innerHTML = `⚠️ <strong>Catatan Vercel:</strong> Bot WhatsApp Baileys memerlukan koneksi socket 24 jam nonstop yang tidak didukung oleh arsitektur Serverless Function Vercel (karena server langsung sleep saat idle).<br>💡 <strong>Solusi Pengiriman Otomatis:</strong> Masukkan <code>FONNTE_TOKEN</code> di Vercel Environment Variables agar notifikasi WA terkirim otomatis dari cloud, atau biarkan bot Baileys berjalan di daemon lokal Anda.`;
+              desc.innerHTML = `⚠️ <strong>Mode Vercel Serverless:</strong> Masukkan <code>FONNTE_TOKEN</code> di Vercel Environment Variables agar notifikasi WA otomatis terkirim dari cloud 24/7, atau jalankan bot Baileys di komputer lokal Anda.`;
             }
             qrBox.style.display = 'none';
             if (resetBtn) resetBtn.style.display = 'none';
