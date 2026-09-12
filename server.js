@@ -5,7 +5,6 @@ const path = require('path');
 const crypto = require('crypto');
 const StockManager = require('./services/stockManager');
 const { getPaymentProvider } = require('./services/payment');
-const { readData } = require('./data/store');
 const {
   sendWhatsAppNotification,
   sendPaymentInstructionNotification,
@@ -420,14 +419,15 @@ app.get('/api/admin/data', requireAdminAuth, async (req, res) => {
   try {
     const vouchers = await StockManager.getAllVouchers();
     const stats = await StockManager.getStock();
-    const localData = readData();
+    const orders = await StockManager.getAllOrders();
+    const settings = await StockManager.getSettings();
 
     res.json({
       success: true,
       data: {
         vouchers,
-        orders: localData.orders,
-        settings: localData.settings,
+        orders,
+        settings,
         stats
       }
     });

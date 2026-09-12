@@ -1,532 +1,502 @@
-const { readData, writeData } = require('../data/store');
 const { supabase, isConfigured } = require('../data/supabaseClient');
 
+function ensureSupabase() {
+  if (!isConfigured()) {
+    throw new Error('Database Supabase tidak terhubung! Pastikan SUPABASE_URL dan SUPABASE_KEY terisi dengan benar di .env.');
+  }
+  return supabase;
+}
+
 class StockManager {
+  /**
+   * Cleans up expired voucher locks and marks associated pending orders as EXPIRED
+   */
   static async cleanupExpiredLocks() {
-    const now = Date.now();
-    const nowIso = new Date(now).toISOString();
+    const client = ensureSupabase();
+    const nowIso = new Date().toISOString();
 
-    // 1. Supabase Cleanup
-    if (isConfigured()) {
-      try {
-        const { data: expiredVouchers } = await supabase
-          .from('vouchers')
-          .select('*')
-          .eq('status', 'LOCKED')
-          .lt('locked_until', nowIso);
+    try {
+      const { data: expiredVouchers, error: expErr } = await client
+        .from('vouchers')
+        .select('*')
+        .eq('status', 'LOCKED')
+        .lt('locked_until', nowIso);
 
-        if (expiredVouchers && expiredVouchers.length > 0) {
-          for (const v of expiredVouchers) {
-            // Check if order was paid
-            if (v.order_id) {
-              const { data: ord } = await supabase
-                .from('orders')
-                .select('status')
-                .eq('id', v.order_id)
-                .single();
+      if (expErr) {
+        console.error('[StockManager] Error selecting expired vouchers:', expErr.message);
+        return;
+      }
 
-              if (ord && ord.status === 'PAID') {
-                continue;
-              }
+      if (expiredVouchers && expiredVouchers.length > 0) {
+        for (const v of expiredVouchers) {
+          // If order was already paid, do not unlock
+          if (v.order_id) {
+            const { data: ord } = await client
+              .from('orders')
+              .select('status')
+              .eq('id', v.order_id)
+              .maybeSingle();
+
+            if (ord && ord.status === 'PAID') {
+              continue;
             }
 
-            // Unlock voucher
-            await supabase
-              .from('vouchers')
-              .update({
-                status: 'AVAILABLE',
-                locked_until: null,
-                order_id: null,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', v.id);
-
-            if (v.order_id) {
-              await supabase
+            // Mark pending order as EXPIRED
+            if (ord && ord.status === 'PENDING') {
+              await client
                 .from('orders')
                 .update({ status: 'EXPIRED' })
-                .eq('id', v.order_id)
-                .eq('status', 'PENDING');
+                .eq('id', v.order_id);
             }
           }
-        }
-      } catch (err) {
-        console.error('Supabase cleanupExpiredLocks error:', err.message);
-      }
-    }
 
-    // 2. Local fallback cleanup
-    const data = readData();
-    let changed = false;
-    for (const voucher of data.vouchers) {
-      if (voucher.status === 'LOCKED' && voucher.lockedUntil && voucher.lockedUntil < now) {
-        const order = data.orders.find(o => o.id === voucher.orderId);
-        if (!order || order.status !== 'PAID') {
-          voucher.status = 'AVAILABLE';
-          voucher.lockedUntil = null;
-          voucher.orderId = null;
-          if (order && order.status === 'PENDING') {
-            order.status = 'EXPIRED';
-          }
-          changed = true;
+          // Unlock voucher back to AVAILABLE
+          await client
+            .from('vouchers')
+            .update({
+              status: 'AVAILABLE',
+              locked_until: null,
+              order_id: null,
+              buyer_name: null,
+              buyer_phone: null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', v.id);
         }
       }
-    }
-    if (changed) {
-      writeData(data);
+    } catch (err) {
+      console.error('[StockManager] cleanupExpiredLocks error:', err.message);
     }
   }
 
-  static async getStock() {
-    await this.cleanupExpiredLocks();
-    const localData = readData();
+  /**
+   * Retrieves store settings directly from Supabase
+   */
+  static async getSettings() {
+    const client = ensureSupabase();
+    try {
+      const { data, error } = await client
+        .from('settings')
+        .select('value')
+        .eq('key', 'store')
+        .maybeSingle();
 
-    if (isConfigured()) {
-      try {
-        const { data: vouchers, error } = await supabase
-          .from('vouchers')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (!error && vouchers && vouchers.length > 0) {
-          const available = vouchers.filter(v => v.status === 'AVAILABLE').length;
-          const locked = vouchers.filter(v => v.status === 'LOCKED').length;
-          const sold = vouchers.filter(v => v.status === 'SOLD').length;
-          const total = vouchers.length;
-
-          return {
-            total,
-            available,
-            locked,
-            sold,
-            settings: localData.settings
-          };
-        }
-      } catch (err) {
-        console.error('Supabase getStock error:', err.message);
+      if (error) {
+        console.warn('[StockManager] Warning getting settings from Supabase:', error.message);
       }
+
+      if (data && data.value) {
+        return data.value;
+      }
+    } catch (e) {
+      console.error('[StockManager] Settings error:', e.message);
     }
 
-    const available = localData.vouchers.filter(v => v.status === 'AVAILABLE').length;
-    const locked = localData.vouchers.filter(v => v.status === 'LOCKED').length;
-    const sold = localData.vouchers.filter(v => v.status === 'SOLD').length;
-    const total = localData.vouchers.length;
+    return {
+      productName: 'Google AI Pro Voucher (Aktivasi Resmi)',
+      price: 75000,
+      fee: 0,
+      currency: 'Rp',
+      merchantName: 'mybrotools',
+      orderTimeoutMinutes: 10,
+      supportContact: 'https://wa.me/'
+    };
+  }
+
+  /**
+   * Updates store settings directly in Supabase
+   */
+  static async updateSettings(newSettings) {
+    const client = ensureSupabase();
+    const current = await this.getSettings();
+    const merged = { ...current, ...newSettings };
+
+    const { error } = await client
+      .from('settings')
+      .upsert({
+        key: 'store',
+        value: merged,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
+    return merged;
+  }
+
+  /**
+   * Returns current stock numbers directly from Supabase
+   */
+  static async getStock() {
+    await this.cleanupExpiredLocks();
+    const client = ensureSupabase();
+
+    const { data: vouchers, error } = await client
+      .from('vouchers')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error('[StockManager] Supabase getStock error:', error.message);
+      throw error;
+    }
+
+    const list = vouchers || [];
+    const available = list.filter(v => v.status === 'AVAILABLE').length;
+    const locked = list.filter(v => v.status === 'LOCKED').length;
+    const sold = list.filter(v => v.status === 'SOLD').length;
+    const total = list.length;
+    const settings = await this.getSettings();
 
     return {
       total,
       available,
       locked,
       sold,
-      settings: localData.settings
+      settings
     };
   }
 
+  /**
+   * Locks the next available voucher for checkout in Supabase
+   */
   static async lockNextVoucher(orderId, buyerName = '', buyerPhone = '') {
     await this.cleanupExpiredLocks();
-    const localData = readData();
-    const timeoutMs = (localData.settings.orderTimeoutMinutes || 10) * 60 * 1000;
+    const client = ensureSupabase();
+    const settings = await this.getSettings();
+    const timeoutMs = (settings.orderTimeoutMinutes || 10) * 60 * 1000;
     const lockExpiry = Date.now() + timeoutMs;
     const lockExpiryIso = new Date(lockExpiry).toISOString();
 
-    if (isConfigured()) {
-      try {
-        const { data: availableVouchers, error } = await supabase
-          .from('vouchers')
-          .select('*')
-          .eq('status', 'AVAILABLE')
-          .order('id', { ascending: true })
-          .limit(1);
+    const { data: availableVouchers, error } = await client
+      .from('vouchers')
+      .select('*')
+      .eq('status', 'AVAILABLE')
+      .order('id', { ascending: true })
+      .limit(1);
 
-        if (!error && availableVouchers && availableVouchers.length > 0) {
-          const voucher = availableVouchers[0];
-          await supabase
-            .from('vouchers')
-            .update({
-              status: 'LOCKED',
-              locked_until: lockExpiryIso,
-              order_id: orderId,
-              buyer_name: buyerName,
-              buyer_phone: buyerPhone,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', voucher.id);
+    if (error) throw error;
 
-          // Update local copy too
-          const locV = localData.vouchers.find(v => v.id === voucher.id);
-          if (locV) {
-            locV.status = 'LOCKED';
-            locV.lockedUntil = lockExpiry;
-            locV.orderId = orderId;
-            locV.buyerName = buyerName;
-            locV.buyerPhone = buyerPhone;
-            writeData(localData);
-          }
-
-          return { voucherId: voucher.id, lockedUntil: lockExpiry };
-        } else {
-          throw new Error('Maaf, stok voucher saat ini sedang habis atau sedang diproses pembeli lain!');
-        }
-      } catch (err) {
-        console.error('Supabase lockNextVoucher error:', err.message);
-        if (err.message.includes('habis')) throw err;
-      }
-    }
-
-    const voucher = localData.vouchers.find(v => v.status === 'AVAILABLE');
-    if (!voucher) {
+    if (!availableVouchers || availableVouchers.length === 0) {
       throw new Error('Maaf, stok voucher saat ini sedang habis atau sedang diproses pembeli lain!');
     }
 
-    voucher.status = 'LOCKED';
-    voucher.lockedUntil = lockExpiry;
-    voucher.orderId = orderId;
-    voucher.buyerName = buyerName;
-    voucher.buyerPhone = buyerPhone;
+    const voucher = availableVouchers[0];
+    const { error: lockErr } = await client
+      .from('vouchers')
+      .update({
+        status: 'LOCKED',
+        locked_until: lockExpiryIso,
+        order_id: orderId,
+        buyer_name: buyerName,
+        buyer_phone: buyerPhone,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', voucher.id);
 
-    writeData(localData);
+    if (lockErr) throw lockErr;
+
     return { voucherId: voucher.id, lockedUntil: lockExpiry };
   }
 
-  static async createOrder({ id, transactionId, amount, customerName, customerPhone, qrCodeData, qrCodeUrl, paymentUrl, expiresAt, provider = 'buatqris' }) {
-    const lockResult = await this.lockNextVoucher(id, customerName, customerPhone);
-    const localData = readData();
+  /**
+   * Creates a new order directly in Supabase orders table
+   */
+  static async createOrder(orderData) {
+    const client = ensureSupabase();
+    const lockResult = await this.lockNextVoucher(
+      orderData.id,
+      orderData.customerName,
+      orderData.customerPhone
+    );
 
-    // Use provider's exact expired_at if available
-    let orderExpiryIso = new Date(lockResult.lockedUntil).toISOString();
-    if (expiresAt) {
-      try {
-        let s = String(expiresAt).trim();
-        if (s.includes(' ') && !s.includes('T')) {
-          s = s.replace(' ', 'T') + '+07:00';
-        }
-        const parsed = new Date(s);
-        if (!isNaN(parsed.getTime())) {
-          orderExpiryIso = parsed.toISOString();
-        }
-      } catch (e) {
-        console.warn('Expiry parse warning:', e.message);
-      }
-    }
+    const expiresIso = orderData.expiresAt
+      ? new Date(orderData.expiresAt).toISOString()
+      : new Date(lockResult.lockedUntil).toISOString();
 
     const newOrder = {
-      id,
-      transactionId: transactionId || null,
-      amount,
-      voucherId: lockResult.voucherId,
+      id: orderData.id,
+      amount: orderData.amount,
+      fee: orderData.fee || 0,
+      total: orderData.total || orderData.amount,
+      customer_name: orderData.customerName || 'Pembeli',
+      customer_phone: orderData.customerPhone || '',
+      qr_code_data: orderData.qrCodeData || null,
+      qr_code_url: orderData.qrCodeUrl || null,
       status: 'PENDING',
-      qrCodeData,
-      qrCodeUrl,
-      paymentUrl: paymentUrl || null,
-      customerName: customerName || 'Pembeli',
-      customerPhone: customerPhone || '',
-      createdAt: new Date().toISOString(),
-      expiresAt: orderExpiryIso,
-      paidAt: null,
-      provider
+      voucher_url: null,
+      provider: orderData.provider || 'buatqris',
+      created_at: new Date().toISOString(),
+      expires_at: expiresIso,
+      paid_at: null,
+      raw_data: {
+        transactionId: orderData.transactionId || null,
+        paymentUrl: orderData.paymentUrl || null,
+        voucherId: lockResult.voucherId,
+        lockedUntil: lockResult.lockedUntil
+      }
     };
 
-    if (isConfigured()) {
-      try {
-        await supabase.from('orders').insert({
-          id,
-          amount,
-          fee: 0,
-          total: amount,
-          customer_name: newOrder.customerName,
-          customer_phone: newOrder.customerPhone,
-          qr_code_data: qrCodeData,
-          qr_code_url: qrCodeUrl,
-          status: 'PENDING',
-          voucher_url: null,
-          provider,
-          created_at: newOrder.createdAt,
-          expires_at: newOrder.expiresAt,
-          raw_data: {
-            voucherId: lockResult.voucherId,
-            transactionId: transactionId || null,
-            paymentUrl: paymentUrl || null
-          }
-        });
-      } catch (err) {
-        console.error('Supabase createOrder error:', err.message);
-      }
+    const { data, error } = await client
+      .from('orders')
+      .insert(newOrder)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[StockManager] Supabase createOrder error:', error.message);
+      throw error;
     }
 
-    localData.orders.push(newOrder);
-    writeData(localData);
-
-    return newOrder;
+    return {
+      id: data.id,
+      transactionId: orderData.transactionId || null,
+      amount: data.amount,
+      voucherId: lockResult.voucherId,
+      customerName: data.customer_name,
+      customerPhone: data.customer_phone,
+      status: data.status,
+      qrCodeData: data.qr_code_data,
+      qrCodeUrl: data.qr_code_url,
+      paymentUrl: orderData.paymentUrl || null,
+      createdAt: data.created_at,
+      expiresAt: data.expires_at,
+      provider: data.provider
+    };
   }
 
-  static async getOrder(orderId) {
-    await this.cleanupExpiredLocks();
-    const localData = readData();
+  /**
+   * Finds an order by ID or transaction ID directly from Supabase
+   */
+  static async getOrder(orderIdOrTrxId) {
+    const client = ensureSupabase();
 
-    if (isConfigured()) {
-      try {
-        let query = supabase.from('orders').select('*');
-        // Match either by id or raw_data->>transactionId
-        if (orderId) {
-          const { data: dbOrder } = await supabase
-            .from('orders')
-            .select('*')
-            .or(`id.eq.${orderId},raw_data->>transactionId.eq.${orderId}`)
-            .limit(1)
-            .maybeSingle();
+    const { data: dbOrder, error } = await client
+      .from('orders')
+      .select('*')
+      .or(`id.eq.${orderIdOrTrxId},raw_data->>transactionId.eq.${orderIdOrTrxId}`)
+      .limit(1)
+      .maybeSingle();
 
-          if (dbOrder) {
-            let voucherUrl = dbOrder.voucher_url;
-            let voucherId = dbOrder.raw_data?.voucherId;
-            let paymentUrl = dbOrder.raw_data?.paymentUrl;
-
-            if (dbOrder.status === 'PAID' && !voucherUrl && voucherId) {
-              const { data: v } = await supabase
-                .from('vouchers')
-                .select('url')
-                .eq('id', voucherId)
-                .single();
-              if (v) voucherUrl = v.url;
-            }
-
-            return {
-              id: dbOrder.id,
-              transactionId: dbOrder.raw_data?.transactionId || null,
-              amount: Number(dbOrder.amount),
-              fee: Number(dbOrder.fee || 0),
-              total: Number(dbOrder.total || dbOrder.amount),
-              voucherId,
-              status: dbOrder.status,
-              qrCodeData: dbOrder.qr_code_data,
-              qrCodeUrl: dbOrder.qr_code_url,
-              paymentUrl,
-              customerName: dbOrder.customer_name,
-              customerPhone: dbOrder.customer_phone,
-              createdAt: dbOrder.created_at,
-              expiresAt: dbOrder.expires_at,
-              paidAt: dbOrder.paid_at,
-              provider: dbOrder.provider,
-              voucherUrl,
-              isPaid: dbOrder.status === 'PAID',
-              isExpired: dbOrder.status === 'EXPIRED'
-            };
-          }
-        }
-      } catch (err) {
-        console.error('Supabase getOrder error:', err.message);
-      }
+    if (error) {
+      console.error('[StockManager] Supabase getOrder error:', error.message);
     }
+    if (!dbOrder) return null;
 
-    const order = localData.orders.find(o => o.id === orderId || o.transactionId === orderId);
-    if (!order) return null;
+    let voucherUrl = dbOrder.voucher_url;
+    let voucherId = dbOrder.raw_data?.voucherId || null;
 
-    let voucherUrl = null;
-    let voucherId = null;
+    if (dbOrder.status === 'PAID') {
+      if (!voucherUrl && voucherId) {
+        const { data: v } = await client
+          .from('vouchers')
+          .select('url')
+          .eq('id', voucherId)
+          .maybeSingle();
 
-    if (order.status === 'PAID') {
-      const voucher = localData.vouchers.find(v => v.id === order.voucherId);
-      if (voucher) {
-        voucherUrl = voucher.url;
-        voucherId = voucher.id;
+        if (v) voucherUrl = v.url;
       }
     }
 
     return {
-      ...order,
+      id: dbOrder.id,
+      transactionId: dbOrder.raw_data?.transactionId || null,
+      amount: dbOrder.amount,
+      fee: dbOrder.fee || 0,
+      total: dbOrder.total || dbOrder.amount,
+      customerName: dbOrder.customer_name,
+      customerPhone: dbOrder.customer_phone,
+      qrCodeData: dbOrder.qr_code_data,
+      qrCodeUrl: dbOrder.qr_code_url,
+      paymentUrl: dbOrder.raw_data?.paymentUrl || null,
+      status: dbOrder.status,
       voucherUrl,
       voucherId,
-      isPaid: order.status === 'PAID',
-      isExpired: order.status === 'EXPIRED'
+      provider: dbOrder.provider,
+      createdAt: dbOrder.created_at,
+      expiresAt: dbOrder.expires_at,
+      paidAt: dbOrder.paid_at,
+      isPaid: dbOrder.status === 'PAID',
+      isExpired: dbOrder.status === 'EXPIRED'
     };
   }
 
+  /**
+   * Marks an order as PAID in Supabase and permanently binds the sold voucher
+   */
   static async markAsPaid(orderIdOrTrxId, paymentDetails = {}) {
-    const localData = readData();
+    const client = ensureSupabase();
+
+    const { data: dbOrder, error } = await client
+      .from('orders')
+      .select('*')
+      .or(`id.eq.${orderIdOrTrxId},raw_data->>transactionId.eq.${orderIdOrTrxId}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !dbOrder) {
+      throw new Error(`Order ${orderIdOrTrxId} tidak ditemukan di database Supabase`);
+    }
+
     const paidAt = new Date().toISOString();
-    let voucherUrl = null;
-    let updatedOrder = null;
+    let voucherUrl = dbOrder.voucher_url;
+    const voucherId = dbOrder.raw_data?.voucherId;
 
-    if (isConfigured()) {
-      try {
-        const { data: dbOrder } = await supabase
-          .from('orders')
-          .select('*')
-          .or(`id.eq.${orderIdOrTrxId},raw_data->>transactionId.eq.${orderIdOrTrxId}`)
-          .limit(1)
-          .maybeSingle();
+    if (voucherId) {
+      const { data: v } = await client
+        .from('vouchers')
+        .select('*')
+        .eq('id', voucherId)
+        .single();
 
-        if (dbOrder) {
-          const voucherId = dbOrder.raw_data?.voucherId;
-          if (voucherId) {
-            const { data: v } = await supabase
-              .from('vouchers')
-              .select('*')
-              .eq('id', voucherId)
-              .single();
-
-            if (v) {
-              voucherUrl = v.url;
-              await supabase
-                .from('vouchers')
-                .update({
-                  status: 'SOLD',
-                  sold_at: paidAt,
-                  locked_until: null,
-                  buyer_phone: dbOrder.customer_phone,
-                  updated_at: paidAt
-                })
-                .eq('id', voucherId);
-            }
-          }
-
-          const { data: newDbOrder } = await supabase
-            .from('orders')
-            .update({
-              status: 'PAID',
-              paid_at: paidAt,
-              voucher_url: voucherUrl,
-              raw_data: {
-                ...dbOrder.raw_data,
-                paymentDetails
-              }
-            })
-            .eq('id', dbOrder.id)
-            .select()
-            .single();
-
-          updatedOrder = newDbOrder;
-        }
-      } catch (err) {
-        console.error('Supabase markAsPaid error:', err.message);
+      if (v) {
+        voucherUrl = v.url;
+        await client
+          .from('vouchers')
+          .update({
+            status: 'SOLD',
+            sold_at: paidAt,
+            locked_until: null,
+            order_id: dbOrder.id,
+            buyer_name: dbOrder.customer_name,
+            buyer_phone: dbOrder.customer_phone,
+            updated_at: paidAt
+          })
+          .eq('id', voucherId);
       }
     }
 
-    const order = localData.orders.find(o => o.id === orderIdOrTrxId || o.transactionId === orderIdOrTrxId);
-    if (order) {
-      order.status = 'PAID';
-      order.paidAt = paidAt;
-      order.paymentDetails = paymentDetails;
+    const updatedRawData = {
+      ...(dbOrder.raw_data || {}),
+      paymentDetails
+    };
 
-      const voucher = localData.vouchers.find(v => v.id === order.voucherId);
-      if (voucher) {
-        voucher.status = 'SOLD';
-        voucher.soldAt = paidAt;
-        voucher.lockedUntil = null;
-        voucher.buyerPhone = order.customerPhone;
-        voucherUrl = voucherUrl || voucher.url;
-      }
-      writeData(localData);
+    const { data: updatedOrder, error: updateErr } = await client
+      .from('orders')
+      .update({
+        status: 'PAID',
+        paid_at: paidAt,
+        voucher_url: voucherUrl,
+        raw_data: updatedRawData
+      })
+      .eq('id', dbOrder.id)
+      .select()
+      .single();
 
-      return {
-        order: {
-          id: order.id,
-          status: order.status,
-          amount: order.amount,
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-          paidAt: order.paidAt
-        },
-        voucherUrl
-      };
-    }
+    if (updateErr) throw updateErr;
 
-    if (updatedOrder) {
-      return {
-        order: {
-          id: updatedOrder.id,
-          status: updatedOrder.status,
-          amount: updatedOrder.amount,
-          customerName: updatedOrder.customer_name,
-          customerPhone: updatedOrder.customer_phone,
-          paidAt: updatedOrder.paid_at
-        },
-        voucherUrl
-      };
-    }
-
-    throw new Error(`Order ${orderIdOrTrxId} not found`);
+    return {
+      order: {
+        id: updatedOrder.id,
+        status: updatedOrder.status,
+        amount: updatedOrder.amount,
+        customerName: updatedOrder.customer_name,
+        customerPhone: updatedOrder.customer_phone,
+        paidAt: updatedOrder.paid_at
+      },
+      voucherUrl
+    };
   }
 
+  /**
+   * Returns all vouchers directly from Supabase
+   */
   static async getAllVouchers() {
     await this.cleanupExpiredLocks();
-    if (isConfigured()) {
-      try {
-        const { data: vouchers, error } = await supabase
-          .from('vouchers')
-          .select('*')
-          .order('id', { ascending: true });
+    const client = ensureSupabase();
 
-        if (!error && vouchers && vouchers.length > 0) {
-          return vouchers.map(v => ({
-            id: v.id,
-            url: v.url,
-            status: v.status,
-            lockedUntil: v.locked_until ? new Date(v.locked_until).getTime() : null,
-            orderId: v.order_id,
-            soldAt: v.sold_at,
-            buyerName: v.buyer_name,
-            buyerPhone: v.buyer_phone
-          }));
-        }
-      } catch (err) {
-        console.error('Supabase getAllVouchers error:', err.message);
-      }
-    }
+    const { data: vouchers, error } = await client
+      .from('vouchers')
+      .select('*')
+      .order('id', { ascending: true });
 
-    const localData = readData();
-    return localData.vouchers;
+    if (error) throw error;
+
+    return (vouchers || []).map(v => ({
+      id: v.id,
+      url: v.url,
+      status: v.status,
+      lockedUntil: v.locked_until ? new Date(v.locked_until).getTime() : null,
+      orderId: v.order_id,
+      soldAt: v.sold_at,
+      buyerName: v.buyer_name,
+      buyerPhone: v.buyer_phone
+    }));
   }
 
+  /**
+   * Returns all orders directly from Supabase
+   */
+  static async getAllOrders() {
+    const client = ensureSupabase();
+
+    const { data: orders, error } = await client
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (orders || []).map(o => ({
+      id: o.id,
+      amount: o.amount,
+      fee: o.fee || 0,
+      total: o.total || o.amount,
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      status: o.status,
+      voucherUrl: o.voucher_url,
+      voucherId: o.raw_data?.voucherId || null,
+      provider: o.provider,
+      createdAt: o.created_at,
+      expiresAt: o.expires_at,
+      paidAt: o.paid_at
+    }));
+  }
+
+  /**
+   * Updates voucher URLs in Supabase, strictly protecting SOLD vouchers
+   */
   static async updateVouchers(vouchers) {
-    const localData = readData();
-    const existingMap = new Map(localData.vouchers.map(v => [v.id, v]));
+    const client = ensureSupabase();
 
-    // Strictly protect SOLD vouchers from modification
-    const safeVouchersToUpdate = vouchers.filter(v => {
-      const existing = existingMap.get(v.id);
-      if (existing && existing.status === 'SOLD') {
-        console.warn(`[StockManager] Voucher ${v.id} is SOLD and locked. Modification rejected.`);
-        return false;
-      }
-      return true;
-    });
+    const { data: currentVouchers } = await client
+      .from('vouchers')
+      .select('id, status');
 
-    if (isConfigured()) {
-      try {
-        for (const v of safeVouchersToUpdate) {
-          await supabase
-            .from('vouchers')
-            .upsert({
-              id: v.id,
-              url: v.url,
-              status: v.status || 'AVAILABLE',
-              updated_at: new Date().toISOString()
-            });
-        }
-      } catch (err) {
-        console.error('Supabase updateVouchers error:', err.message);
+    const statusMap = new Map((currentVouchers || []).map(v => [v.id, v.status]));
+
+    for (const v of vouchers) {
+      if (statusMap.get(v.id) === 'SOLD') {
+        console.warn(`[StockManager] Voucher ${v.id} is SOLD. Modification rejected.`);
+        continue;
       }
+      await client
+        .from('vouchers')
+        .update({
+          url: v.url,
+          status: v.status || 'AVAILABLE',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', v.id);
     }
 
-    // Apply updates locally only to non-SOLD vouchers
-    for (const v of safeVouchersToUpdate) {
-      const idx = localData.vouchers.findIndex(item => item.id === v.id);
-      if (idx !== -1) {
-        // Ensure status doesn't revert a sold voucher
-        if (localData.vouchers[idx].status !== 'SOLD') {
-          localData.vouchers[idx].url = v.url || localData.vouchers[idx].url;
-        }
-      }
-    }
-
-    writeData(localData);
-    return localData.vouchers;
+    return this.getAllVouchers();
   }
 
+  /**
+   * Updates a single voucher link in Supabase
+   */
   static async updateSingleVoucher(id, newUrl) {
-    const localData = readData();
-    const v = localData.vouchers.find(item => item.id === id);
-    if (!v) {
-      throw new Error(`Voucher dengan ID ${id} tidak ditemukan`);
+    const client = ensureSupabase();
+
+    const { data: v, error } = await client
+      .from('vouchers')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !v) {
+      throw new Error(`Voucher dengan ID ${id} tidak ditemukan di database Supabase`);
     }
     if (v.status === 'SOLD') {
       throw new Error(`Voucher ${id} sudah terjual (LUNAS) dan terkunci permanen!`);
@@ -537,27 +507,25 @@ class StockManager {
       throw new Error('URL voucher tidak boleh kosong');
     }
 
-    v.url = cleanUrl;
-    writeData(localData);
+    const { data: updated, error: updErr } = await client
+      .from('vouchers')
+      .update({
+        url: cleanUrl,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (isConfigured()) {
-      try {
-        await supabase
-          .from('vouchers')
-          .update({
-            url: cleanUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id);
-      } catch (err) {
-        console.error('Supabase updateSingleVoucher error:', err.message);
-      }
-    }
-
-    return v;
+    if (updErr) throw updErr;
+    return updated;
   }
 
+  /**
+   * Adds new vouchers directly into Supabase
+   */
   static async addVouchers(urls) {
+    const client = ensureSupabase();
     if (!Array.isArray(urls) || urls.length === 0) {
       throw new Error('Daftar URL voucher tidak boleh kosong');
     }
@@ -570,11 +538,12 @@ class StockManager {
       throw new Error('Tidak ada URL voucher valid yang dimasukkan');
     }
 
-    const localData = readData();
+    const { data: allV } = await client
+      .from('vouchers')
+      .select('id');
 
-    // Find highest existing voucher numeric suffix
     let maxNum = 0;
-    for (const v of localData.vouchers) {
+    for (const v of (allV || [])) {
       const match = String(v.id).match(/(\d+)$/);
       if (match) {
         const n = parseInt(match[1], 10);
@@ -582,137 +551,81 @@ class StockManager {
       }
     }
 
-    const newVouchers = [];
-    for (let i = 0; i < cleanUrls.length; i++) {
+    const rowsToInsert = cleanUrls.map(url => {
       maxNum++;
-      const id = `GAIP-VOUCHER-${String(maxNum).padStart(2, '0')}`;
-      const newVoucher = {
-        id,
-        url: cleanUrls[i],
+      return {
+        id: `GAIP-VOUCHER-${String(maxNum).padStart(2, '0')}`,
+        url,
         status: 'AVAILABLE',
-        lockedUntil: null,
-        orderId: null,
-        soldAt: null,
-        buyerName: null,
-        buyerPhone: null
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
-      newVouchers.push(newVoucher);
-      localData.vouchers.push(newVoucher);
-    }
+    });
 
-    writeData(localData);
+    const { data, error } = await client
+      .from('vouchers')
+      .insert(rowsToInsert)
+      .select();
 
-    if (isConfigured()) {
-      try {
-        for (const v of newVouchers) {
-          await supabase.from('vouchers').insert({
-            id: v.id,
-            url: v.url,
-            status: 'AVAILABLE',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        }
-      } catch (err) {
-        console.error('Supabase addVouchers error:', err.message);
-      }
-    }
-
-    return newVouchers;
+    if (error) throw error;
+    return data;
   }
 
+  /**
+   * Deletes a voucher directly from Supabase (protecting SOLD/LOCKED)
+   */
   static async deleteVoucher(voucherId) {
-    const localData = readData();
-    let voucher = null;
+    const client = ensureSupabase();
 
-    if (isConfigured()) {
-      try {
-        const { data: dbVoucher } = await supabase
-          .from('vouchers')
-          .select('*')
-          .eq('id', voucherId)
-          .maybeSingle();
+    const { data: v, error } = await client
+      .from('vouchers')
+      .select('*')
+      .eq('id', voucherId)
+      .maybeSingle();
 
-        if (dbVoucher) {
-          voucher = {
-            id: dbVoucher.id,
-            url: dbVoucher.url,
-            status: dbVoucher.status
-          };
-        }
-      } catch (err) {
-        console.error('Supabase check voucher error:', err.message);
-      }
+    if (error || !v) {
+      throw new Error(`Voucher ${voucherId} tidak ditemukan di database Supabase`);
     }
 
-    const idx = localData.vouchers.findIndex(v => v.id === voucherId);
-    if (!voucher && idx !== -1) {
-      voucher = localData.vouchers[idx];
-    }
-
-    if (!voucher && idx === -1) {
-      throw new Error(`Voucher ${voucherId} tidak ditemukan`);
-    }
-
-    // Strict lock: SOLD vouchers cannot be deleted
-    if (voucher && voucher.status === 'SOLD') {
+    if (v.status === 'SOLD') {
       throw new Error(`Voucher ${voucherId} sudah terjual kepada pelanggan dan terkunci permanen, tidak boleh dihapus!`);
     }
 
-    if (voucher && voucher.status === 'LOCKED') {
-      throw new Error(`Voucher ${voucherId} sedang di-hold untuk pesanan yang sedang berjalan. Tunggu hingga selesai atau kadaluarsa.`);
+    if (v.status === 'LOCKED') {
+      throw new Error(`Voucher ${voucherId} sedang di-hold untuk pesanan yang sedang berjalan.`);
     }
 
-    if (idx !== -1) {
-      localData.vouchers.splice(idx, 1);
-      writeData(localData);
-    }
+    const { error: delErr } = await client
+      .from('vouchers')
+      .delete()
+      .eq('id', voucherId);
 
-    if (isConfigured()) {
-      try {
-        const { error } = await supabase.from('vouchers').delete().eq('id', voucherId);
-        if (error) {
-          console.error('Supabase delete error:', error.message);
-        }
-      } catch (err) {
-        console.error('Supabase deleteVoucher error:', err.message);
-      }
-    }
+    if (delErr) throw delErr;
 
     return { success: true, id: voucherId };
   }
 
+  /**
+   * Resets all vouchers in Supabase to AVAILABLE
+   */
   static async resetAllVouchersToAvailable() {
-    if (isConfigured()) {
-      try {
-        await supabase
-          .from('vouchers')
-          .update({
-            status: 'AVAILABLE',
-            locked_until: null,
-            order_id: null,
-            sold_at: null,
-            buyer_name: null,
-            buyer_phone: null,
-            updated_at: new Date().toISOString()
-          })
-          .neq('id', '');
-      } catch (err) {
-        console.error('Supabase resetAllVouchers error:', err.message);
-      }
-    }
+    const client = ensureSupabase();
 
-    const localData = readData();
-    localData.vouchers.forEach(v => {
-      v.status = 'AVAILABLE';
-      v.lockedUntil = null;
-      v.orderId = null;
-      v.soldAt = null;
-      v.buyerName = null;
-      v.buyerPhone = null;
-    });
-    writeData(localData);
-    return localData.vouchers;
+    const { error } = await client
+      .from('vouchers')
+      .update({
+        status: 'AVAILABLE',
+        locked_until: null,
+        order_id: null,
+        sold_at: null,
+        buyer_name: null,
+        buyer_phone: null,
+        updated_at: new Date().toISOString()
+      })
+      .neq('id', '');
+
+    if (error) throw error;
+    return this.getAllVouchers();
   }
 }
 
