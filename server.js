@@ -517,7 +517,7 @@ app.post('/api/admin/reset', requireAdminAuth, async (req, res) => {
   }
 });
 
-app.get('/api/admin/whatsapp/status', requireAdminAuth, (req, res) => {
+app.get('/api/admin/whatsapp/status', (req, res) => {
   res.json({ success: true, data: baileys.getStatus() });
 });
 
