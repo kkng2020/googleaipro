@@ -75,9 +75,18 @@ async function fetchStoreInfo() {
         Beli Sekarang (${priceFormatted})
       `;
 
-      document.getElementById('stockCountText').innerText = `Stock ${stock.available} Voucher`;
+      const stockEl = document.getElementById('stockCountText');
+      stockEl.innerText = `Stock ${stock.available} Voucher`;
+      stockEl.style.display = 'inline';
       const percentage = (stock.available / stock.total) * 100;
       document.getElementById('stockBarFill').style.width = `${percentage}%`;
+
+      const unitEl = document.getElementById('confirmUnitPrice');
+      if (unitEl) unitEl.innerText = priceFormatted;
+      const totalEl = document.getElementById('confirmTotalPrice');
+      if (totalEl) totalEl.innerText = priceFormatted;
+      const payBtnText = document.getElementById('confirmPayBtnText');
+      if (payBtnText) payBtnText.innerText = `Bayar Sekarang (${priceFormatted})`;
 
       if (stock.isSoldOut) {
         document.getElementById('startBuyBtn').disabled = true;
@@ -85,6 +94,12 @@ async function fetchStoreInfo() {
         document.getElementById('startBuyBtn').innerHTML = `
           <span>❌ Stok Habis Terjual</span>
         `;
+        const confirmPayBtn = document.getElementById('confirmPayBtn');
+        if (confirmPayBtn) {
+          confirmPayBtn.disabled = true;
+          confirmPayBtn.style.opacity = '0.5';
+          confirmPayBtn.innerHTML = `<span>❌ Stok Habis Terjual</span>`;
+        }
       }
     }
   } catch (err) {
@@ -172,6 +187,8 @@ function renderOrderView(order) {
   currentOrder = order;
 
   document.getElementById('landingView').style.display = 'none';
+  const confirmView = document.getElementById('confirmView');
+  if (confirmView) confirmView.style.display = 'none';
   document.getElementById('checkoutView').style.display = 'grid';
 
   document.getElementById('merchantBadgeName').innerText = order.merchantName || 'mybrotools';
@@ -331,8 +348,7 @@ function startPolling(orderId) {
   }, 2000);
 }
 
-async function handleCreateOrder() {
-  const btn = document.getElementById('startBuyBtn');
+function handleProceedToConfirmation() {
   const buyerPhone = document.getElementById('buyerPhoneInput').value.trim();
 
   // Validate Phone
@@ -342,12 +358,40 @@ async function handleCreateOrder() {
     return;
   }
 
+  const confirmPhoneVal = document.getElementById('confirmPhoneVal');
+  if (confirmPhoneVal) confirmPhoneVal.innerText = buyerPhone;
+
+  document.getElementById('landingView').style.display = 'none';
+  const confirmView = document.getElementById('confirmView');
+  if (confirmView) confirmView.style.display = 'grid';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function handleBackToLanding() {
+  const confirmView = document.getElementById('confirmView');
+  if (confirmView) confirmView.style.display = 'none';
+  document.getElementById('landingView').style.display = 'block';
+  document.getElementById('buyerPhoneInput').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function handleCreateOrder() {
+  const btn = document.getElementById('confirmPayBtn') || document.getElementById('startBuyBtn');
+  const buyerPhone = document.getElementById('buyerPhoneInput').value.trim();
+
+  // Validate Phone
+  if (!buyerPhone || buyerPhone.length < 9) {
+    alert('Mohon masukkan nomor WhatsApp yang aktif (minimal 9 digit, contoh: 08123456789) agar link pembayaran dan voucher dapat dikirimkan ke Anda.');
+    handleBackToLanding();
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = `
     <svg style="animation: spin 1s linear infinite;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
     </svg>
-    Menyiapkan Pembayaran BuatQris...
+    <span>Menyiapkan Pembayaran QRIS...</span>
   `;
 
   try {
@@ -364,13 +408,23 @@ async function handleCreateOrder() {
     if (!data.success) {
       alert(data.error || 'Gagal membuat pesanan');
       btn.disabled = false;
-      btn.innerText = 'Beli Sekarang (Rp 75.000)';
+      const priceText = document.getElementById('confirmTotalPrice')?.innerText || 'Rp 75.000';
+      btn.innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+          <line x1="1" y1="10" x2="23" y2="10"></line>
+        </svg>
+        <span id="confirmPayBtnText">Bayar Sekarang (${priceText})</span>
+      `;
       return;
     }
 
     const url = new URL(window.location);
     url.searchParams.set('order', data.data.orderId);
     window.history.pushState({}, '', url);
+
+    const confirmView = document.getElementById('confirmView');
+    if (confirmView) confirmView.style.display = 'none';
 
     renderOrderView(data.data);
 
@@ -383,7 +437,14 @@ async function handleCreateOrder() {
     console.error('Create order error:', err);
     alert('Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.');
     btn.disabled = false;
-    btn.innerText = 'Beli Sekarang (Rp 75.000)';
+    const priceText = document.getElementById('confirmTotalPrice')?.innerText || 'Rp 75.000';
+    btn.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+        <line x1="1" y1="10" x2="23" y2="10"></line>
+      </svg>
+      <span id="confirmPayBtnText">Bayar Sekarang (${priceText})</span>
+    `;
   }
 }
 
@@ -517,7 +578,10 @@ async function checkUrlParams() {
 document.addEventListener('DOMContentLoaded', () => {
   setupThemeToggle();
 
-  document.getElementById('startBuyBtn')?.addEventListener('click', handleCreateOrder);
+  document.getElementById('startBuyBtn')?.addEventListener('click', handleProceedToConfirmation);
+  document.getElementById('confirmBackBtn')?.addEventListener('click', handleBackToLanding);
+  document.getElementById('confirmEditPhoneBtn')?.addEventListener('click', handleBackToLanding);
+  document.getElementById('confirmPayBtn')?.addEventListener('click', handleCreateOrder);
   document.getElementById('simulatePayBtn')?.addEventListener('click', handleSimulatePay);
   document.getElementById('manualCheckBtn')?.addEventListener('click', handleManualCheck);
   document.getElementById('downloadStrukBtn')?.addEventListener('click', handleDownloadStruk);
