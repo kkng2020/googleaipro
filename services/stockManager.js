@@ -498,6 +498,8 @@ class StockManager {
     return {
       order: {
         id: updatedOrder.id,
+        transactionId: updatedOrder.transaction_id || updatedRawData?.transactionId || null,
+        voucherId: voucherId || updatedRawData?.voucherId || null,
         status: updatedOrder.status,
         amount: updatedOrder.amount,
         customerName: updatedOrder.customer_name,
@@ -506,6 +508,34 @@ class StockManager {
       },
       voucherUrl
     };
+  }
+
+  /**
+   * Retrieves overall sales statistics (total omzet and available stock)
+   */
+  static async getSalesStats() {
+    const client = ensureSupabase();
+    try {
+      const [{ data: paidOrders, error: ordErr }, stock] = await Promise.all([
+        client
+          .from('orders')
+          .select('amount')
+          .eq('status', 'PAID'),
+        this.getStock()
+      ]);
+
+      if (ordErr) console.warn('[StockManager] getSalesStats orders error:', ordErr.message);
+
+      const totalOmzet = (paidOrders || []).reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+      return {
+        totalOmzet,
+        availableStock: stock.available,
+        totalStock: stock.total
+      };
+    } catch (e) {
+      console.error('[StockManager] getSalesStats error:', e.message);
+      return { totalOmzet: 0, availableStock: 0, totalStock: 0 };
+    }
   }
 
   /**
