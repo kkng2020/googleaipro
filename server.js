@@ -8,6 +8,7 @@ const { getPaymentProvider } = require('./services/payment');
 const {
   sendWhatsAppNotification,
   sendPaymentInstructionNotification,
+  sendAdminPurchaseNotification,
   generateWaLink,
   buildThankYouMessage
 } = require('./services/whatsapp');
@@ -80,6 +81,40 @@ function generateOrderId() {
   const dd = String(date.getDate()).padStart(2, '0');
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `GAIP-${yy}${mm}${dd}-${rand}`;
+}
+
+// Helper to simultaneously notify Buyer and Admin/Owner upon payment success
+async function dispatchOrderSuccessNotifications(orderResult, req) {
+  try {
+    const currentBaseUrl = getBaseUrl(req);
+    const historyUrl = `${currentBaseUrl}/?order=${orderResult.order.id}`;
+
+    // 1. WhatsApp to Buyer
+    sendWhatsAppNotification({
+      phone: orderResult.order.customerPhone,
+      orderId: orderResult.order.id,
+      buyerName: orderResult.order.customerName,
+      amount: orderResult.order.amount,
+      voucherUrl: orderResult.voucherUrl,
+      historyUrl,
+      storeName: 'mybrotools'
+    }).catch(err => console.error('[WhatsApp Buyer] Error:', err.message));
+
+    // 2. WhatsApp to Admin / Owner (081381290533)
+    StockManager.getSalesStats().then(stats => {
+      sendAdminPurchaseNotification({
+        buyerPhone: orderResult.order.customerPhone,
+        orderId: orderResult.order.id,
+        transactionId: orderResult.order.transactionId,
+        slotId: orderResult.order.voucherId,
+        paidAt: orderResult.order.paidAt || new Date().toISOString(),
+        sisaVoucher: stats.availableStock,
+        totalOmzet: stats.totalOmzet
+      }).catch(err => console.error('[WhatsApp Admin] Error:', err.message));
+    }).catch(statsErr => console.error('[WhatsApp Admin Stats] Error:', statsErr.message));
+  } catch (e) {
+    console.error('[Notification Dispatch] Error:', e.message);
+  }
 }
 
 // -------------------------------------------------------------
@@ -257,17 +292,7 @@ app.get('/api/order/:id', async (req, res) => {
               order.voucherUrl = markResult.voucherUrl;
               order.isPaid = true;
 
-              const currentBaseUrl = getBaseUrl(req);
-              const historyUrl = `${currentBaseUrl}/?order=${order.id}`;
-              sendWhatsAppNotification({
-                phone: order.customerPhone,
-                orderId: order.id,
-                buyerName: order.customerName,
-                amount: order.amount,
-                voucherUrl: markResult.voucherUrl,
-                historyUrl,
-                storeName: 'mybrotools'
-              }).catch(e => console.error('WA notify error:', e.message));
+              dispatchOrderSuccessNotifications(markResult, req);
             }
           } catch (chkErr) {
             console.warn('BuatQris status check error:', chkErr.message);
@@ -318,16 +343,17 @@ app.post('/api/order/:id/simulate-pay', async (req, res) => {
       paidAt: new Date().toISOString()
     });
 
-    const currentBaseUrl = getBaseUrl(req);
-    const historyUrl = `${currentBaseUrl}/?order=${orderId}`;
-    const waResult = await sendWhatsAppNotification({
+    dispatchOrderSuccessNotifications(result, req);
+    const waLink = generateWaLink({
       phone: result.order.customerPhone,
-      orderId,
-      buyerName: result.order.customerName,
-      amount: result.order.amount,
-      voucherUrl: result.voucherUrl,
-      historyUrl,
-      storeName: 'mybrotools'
+      message: buildThankYouMessage({
+        orderId,
+        buyerName: result.order.customerName,
+        amount: result.order.amount,
+        voucherUrl: result.voucherUrl,
+        historyUrl: `${getBaseUrl(req)}/?order=${orderId}`,
+        storeName: 'mybrotools'
+      })
     });
 
     res.json({
@@ -337,8 +363,7 @@ app.post('/api/order/:id/simulate-pay', async (req, res) => {
         orderId: result.order.id,
         status: result.order.status,
         voucherUrl: result.voucherUrl,
-        waLink: waResult.waLink || generateWaLink({ phone: result.order.customerPhone, message: waResult.message }),
-        waMessage: waResult.message
+        waLink
       }
     });
   } catch (error) {
@@ -378,19 +403,7 @@ app.post('/api/webhook/buatqris', async (req, res) => {
       });
 
       console.log(`✅ Order ${result.order.id} marked as PAID! Voucher assigned.`);
-
-      // Trigger automatic WhatsApp notification to buyer
-      const currentBaseUrl = getBaseUrl(req);
-      const historyUrl = `${currentBaseUrl}/?order=${result.order.id}`;
-      await sendWhatsAppNotification({
-        phone: result.order.customerPhone,
-        orderId: result.order.id,
-        buyerName: result.order.customerName,
-        amount: result.order.amount,
-        voucherUrl: result.voucherUrl,
-        historyUrl,
-        storeName: 'mybrotools'
-      });
+      dispatchOrderSuccessNotifications(result, req);
     } else if (event === 'payment.expired' || event === 'payment.failed') {
       const trxId = req.body?.transaction_id || delivery;
       console.log(`ℹ️ BuatQris ${event} received for transaction: ${trxId}`);
@@ -423,18 +436,7 @@ app.post('/api/webhook/doku', async (req, res) => {
         rawWebhook: req.body
       });
       console.log(`✅ Order ${invoiceNumber} marked as PAID via DOKU webhook!`);
-
-      const currentBaseUrl = getBaseUrl(req);
-      const historyUrl = `${currentBaseUrl}/?order=${invoiceNumber}`;
-      await sendWhatsAppNotification({
-        phone: result.order.customerPhone,
-        orderId: invoiceNumber,
-        buyerName: result.order.customerName,
-        amount: result.order.amount,
-        voucherUrl: result.voucherUrl,
-        historyUrl,
-        storeName: 'mybrotools'
-      });
+      dispatchOrderSuccessNotifications(result, req);
     }
 
     res.status(200).send('OK');
