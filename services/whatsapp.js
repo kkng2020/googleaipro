@@ -216,11 +216,125 @@ async function sendWhatsAppNotification({ phone, orderId, buyerName, amount, vou
   };
 }
 
+function formatSlotId(id) {
+  if (!id) return 'GAIP-VOUCHER-01';
+  const s = String(id).trim();
+  if (s.toUpperCase().startsWith('GAIP-VOUCHER-')) return s.toUpperCase();
+  const num = s.replace(/[^0-9]/g, '');
+  return num ? `GAIP-VOUCHER-${num.padStart(2, '0')}` : s;
+}
+
+function formatTransactionId(txId) {
+  if (!txId) return '-';
+  const s = String(txId).trim();
+  return s.startsWith('#') ? s : `#${s}`;
+}
+
+function formatWIBTime(dateVal) {
+  const date = dateVal ? new Date(dateVal) : new Date();
+  return date.toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\./g, ':') + ' WIB';
+}
+
+/**
+ * Send WhatsApp notification to Admin/Owner whenever a purchase is completed
+ */
+async function sendAdminPurchaseNotification({
+  buyerPhone,
+  orderId,
+  transactionId,
+  slotId,
+  paidAt,
+  sisaVoucher,
+  totalOmzet
+}) {
+  const adminPhone = process.env.ADMIN_WHATSAPP_PHONE || process.env.OWNER_WHATSAPP_PHONE || '081381290533';
+  const formattedAdminPhone = formatWhatsAppNumber(adminPhone);
+  if (!formattedAdminPhone) return { success: false, reason: 'No admin phone' };
+
+  const formattedBuyerPhone = formatWhatsAppNumber(buyerPhone) || buyerPhone;
+  const formattedSlot = formatSlotId(slotId);
+  const formattedTrx = formatTransactionId(transactionId);
+  const formattedTime = formatWIBTime(paidAt);
+  const formattedOmzet = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(totalOmzet || 0);
+
+  const message = `🔔 *PEMBELIAN BARU*
+- Nomor HP Pembeli : ${formattedBuyerPhone}
+- ORDER ID : ${orderId}
+- TRANSACTION ID : ${formattedTrx}
+- SLOT ID : ${formattedSlot}
+- WAKTU PEMBELIAN : ${formattedTime}
+- SISA VOUCHER : ${sisaVoucher != null ? sisaVoucher : 0} Voucher
+- TOTAL OMZET : ${formattedOmzet}`;
+
+  console.log(`[WhatsApp Admin] Menyiapkan notifikasi pembelian baru ke Owner (${formattedAdminPhone}):\n${message}`);
+
+  // 1. Try Baileys (if connected)
+  if (baileys.status === 'CONNECTED') {
+    try {
+      const bResult = await baileys.sendMessage(formattedAdminPhone, message);
+      if (bResult.success) {
+        console.log(`[WhatsApp Admin] Notifikasi sukses terkirim ke Owner via Baileys!`);
+        return { success: true, provider: 'baileys', message };
+      }
+    } catch (bErr) {
+      console.error('[WhatsApp Admin] Baileys error:', bErr.message);
+    }
+  }
+
+  // 2. Try Fonnte (if token configured)
+  const fonnteToken = process.env.FONNTE_TOKEN;
+  if (fonnteToken) {
+    try {
+      await axios.post(
+        'https://api.fonnte.com/send',
+        {
+          target: formattedAdminPhone,
+          message: message,
+          countryCode: '62'
+        },
+        {
+          headers: { Authorization: fonnteToken },
+          timeout: 10000
+        }
+      );
+      console.log(`[WhatsApp Admin] Notifikasi sukses terkirim ke Owner via Fonnte!`);
+      return { success: true, provider: 'fonnte', message };
+    } catch (err) {
+      console.error('[WhatsApp Admin] Fonnte error:', err.message);
+    }
+  }
+
+  const waLink = generateWaLink({ phone: formattedAdminPhone, message });
+  return {
+    success: false,
+    reason: 'WhatsApp belum tersambung via Baileys/Fonnte',
+    waLink,
+    message
+  };
+}
+
 module.exports = {
   formatWhatsAppNumber,
+  formatSlotId,
+  formatTransactionId,
+  formatWIBTime,
   buildPaymentInstructionMessage,
   buildThankYouMessage,
   generateWaLink,
   sendPaymentInstructionNotification,
-  sendWhatsAppNotification
+  sendWhatsAppNotification,
+  sendAdminPurchaseNotification
 };
