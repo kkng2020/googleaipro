@@ -75,7 +75,7 @@ async function fetchStoreInfo() {
         Beli Sekarang (${priceFormatted})
       `;
 
-      document.getElementById('stockCountText').innerText = `Tersisa ${stock.available} dari ${stock.total}`;
+      document.getElementById('stockCountText').innerText = `Stock ${stock.available} Voucher`;
       const percentage = (stock.available / stock.total) * 100;
       document.getElementById('stockBarFill').style.width = `${percentage}%`;
 
