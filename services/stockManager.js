@@ -164,27 +164,30 @@ class StockManager {
 
   /**
    * Returns current stock numbers directly from Supabase
+   * Note: cleanupExpiredLocks() runs automatically every 30s in server.js background interval
    */
   static async getStock() {
-    await this.cleanupExpiredLocks();
     const client = ensureSupabase();
 
-    const { data: vouchers, error } = await client
-      .from('vouchers')
-      .select('*')
-      .order('id', { ascending: true });
+    // Run voucher count + settings queries in parallel for faster response
+    const [voucherResult, settings] = await Promise.all([
+      client
+        .from('vouchers')
+        .select('status')
+        .order('id', { ascending: true }),
+      this.getSettings()
+    ]);
 
-    if (error) {
-      console.error('[StockManager] Supabase getStock error:', error.message);
-      throw error;
+    if (voucherResult.error) {
+      console.error('[StockManager] Supabase getStock error:', voucherResult.error.message);
+      throw voucherResult.error;
     }
 
-    const list = vouchers || [];
+    const list = voucherResult.data || [];
     const available = list.filter(v => v.status === 'AVAILABLE').length;
     const locked = list.filter(v => v.status === 'LOCKED').length;
     const sold = list.filter(v => v.status === 'SOLD').length;
     const total = list.length;
-    const settings = await this.getSettings();
 
     return {
       total,
