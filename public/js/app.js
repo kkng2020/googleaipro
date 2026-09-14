@@ -13,13 +13,16 @@ function formatRupiah(amount) {
 
 function formatDateTime(dateStr) {
   const date = dateStr ? new Date(dateStr) : new Date();
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const y = date.getFullYear();
-  const h = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
-  const s = String(date.getSeconds()).padStart(2, '0');
-  return `${d}/${m}/${y} ${h}:${min}:${s}`;
+  return date.toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\./g, ':') + ' WIB';
 }
 
 function showToast(msg) {
