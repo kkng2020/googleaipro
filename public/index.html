@@ -64,7 +64,7 @@
         <div class="stock-meter-card">
           <div class="stock-meter-header">
             <span>Ketersediaan Voucher</span>
-            <span id="stockCountText" style="color: #10b981;">Stock 10 Voucher</span>
+            <span id="stockCountText" style="color: #10b981; font-size: 1rem; display: none;"></span>
           </div>
           <div class="stock-progress-bar">
             <div class="stock-progress-fill" id="stockBarFill" style="width: 100%;"></div>
@@ -103,6 +103,149 @@
         </button>
       </div>
 
+      <!-- STATE 1.5: Order Confirmation View (Two Columns) -->
+      <div id="confirmView" class="confirm-grid" style="display: none;">
+        <!-- LEFT COLUMN: Detail Jenis Pesanan, Fitur Paket, Syarat & Ketentuan, Garansi -->
+        <div class="confirm-col-left">
+          <div class="confirm-product-header">
+            <span class="confirm-badge">✨ Detail Paket Resmi</span>
+            <h2 class="confirm-title">✨💎 Google AI Pro - 18 Bulan 💎✨</h2>
+          </div>
+
+          <!-- Fitur Paket -->
+          <div class="confirm-section-card">
+            <div class="confirm-section-title">
+              <span>🚀</span> APA YANG DIDAPAT??
+            </div>
+            <ul class="confirm-list">
+              <li><span class="icon-chk">✅</span> <span>Paket 18 Bulan</span></li>
+              <li><span class="icon-chk">✅</span> <span>Penyimpanan Cloud 5 TB</span></li>
+              <li><span class="icon-chk">✅</span> <span>Bukan akun sharing — 100% private</span></li>
+              <li><span class="icon-chk">✅</span> <span>Tidak perlu kartu/metode pembayaran</span></li>
+              <li><span class="icon-chk">✅</span> <span>Langganan Gemini AI Pro asli, aktif di akun Gmail sendiri</span>
+              </li>
+              <li><span class="icon-chk">✅</span> <span>Bisa Undang 5 anggota keluarga</span></li>
+            </ul>
+          </div>
+
+          <!-- Syarat & Ketentuan -->
+          <div class="confirm-section-card warning-card">
+            <div class="confirm-section-title warning-title">
+              <span>⚠️</span> SYARAT & KETENTUAN
+            </div>
+            <ul class="confirm-list warning-list">
+              <li><span class="icon-warn">⚠️</span> <span>Voucher dapat kadaluarsa jika tidak segera di
+                  Activation.</span></li>
+              <li><span class="icon-warn">⚠️</span> <span>Link wajib digunakan & kendala dilaporkan maksimal 24 jam
+                  setelah pembelian</span></li>
+              <li><span class="icon-warn">⚠️</span> <span>Tidak ada refund</span></li>
+              <li><span class="icon-warn">⛔</span> <span>Tidak ada Garansi Produk jika mati sebelum 18 bulan (jarang
+                  kejadian)</span></li>
+            </ul>
+          </div>
+
+          <!-- Kebijakan Garansi -->
+          <div class="confirm-section-card guarantee-card">
+            <div class="confirm-section-title">
+              <span>🛡️</span> PERSETUJUAN & GARANSO
+            </div>
+            <div class="guarantee-box-item success-item">
+              <span class="g-icon">✅</span>
+              <div class="g-text"><strong>GARANSI AKTIVASI SAMPAI SUKSES</strong></div>
+            </div>
+            <div class="guarantee-box-item success-item">
+              <span class="g-icon">✅</span>
+              <div class="g-text"><strong>Membeli berarti setuju dengan Syarat & Ketentuan</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Order Summary, Qty, Payment, Warning, Big Action Button -->
+        <div class="confirm-col-right">
+          <div class="confirm-summary-header">
+            <h3>Konfirmasi Pesanan</h3>
+            <span class="step-pill">Langkah Terakhir</span>
+          </div>
+
+          <!-- Customer Phone Info -->
+          <div class="confirm-info-box">
+            <div class="info-label-row">
+              <span class="info-label">📱 Nomor WhatsApp Anda:</span>
+              <button type="button" class="btn-edit-phone" id="confirmEditPhoneBtn">Ubah Nomor</button>
+            </div>
+            <div class="info-phone-val" id="confirmPhoneVal">08123456789</div>
+            <div class="info-hint">Link voucher, struk, dan riwayat pesanan otomatis dikirimkan ke WhatsApp Anda.</div>
+          </div>
+
+          <!-- Quantity (Fixed 1 Voucher) -->
+          <div class="confirm-qty-box">
+            <div class="qty-label-group">
+              <span class="qty-label-title">Jumlah Pesanan</span>
+              <span class="qty-label-sub">1 Voucher per orderan</span>
+            </div>
+            <div class="qty-badge-fixed">
+              <span class="qty-num">1</span>
+              <span class="qty-unit">Voucher</span>
+            </div>
+          </div>
+
+          <!-- Jenis Pembayaran -->
+          <div class="confirm-payment-box">
+            <span class="payment-box-title">Jenis Pembayaran</span>
+            <div class="payment-method-card">
+              <div class="payment-method-left">
+                <span class="qris-brand-badge">QRIS</span>
+                <div>
+                  <div class="payment-method-name">QRIS Otomatis</div>
+                  <div class="payment-method-desc">BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay, dll.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Peringatan Box -->
+          <div class="confirm-warning-alert">
+            <div class="warning-alert-icon">⚠️</div>
+            <div class="warning-alert-content">
+              <strong>PERHATIAN :</strong> <br> LINK AKAN TERKIRIM OTOMATIS SETELAH PEMBAYARAN TERVERIFIKASI. jika belum
+              melakukan Pembayaran dalam 5 Menit, silahkan Order Ulang.
+            </div>
+          </div>
+
+          <!-- Rincian Harga Card -->
+          <div class="confirm-price-summary">
+            <div class="price-line">
+              <span>Harga Voucher (1x)</span>
+              <span id="confirmUnitPrice">Rp 75.000</span>
+            </div>
+            <div class="price-line">
+              <span>Biaya Layanan</span>
+              <span class="free-text">GRATIS (Rp 0)</span>
+            </div>
+            <div class="price-separator"></div>
+            <div class="price-line total-line">
+              <span>Total Tagihan:</span>
+              <span class="total-price-val" id="confirmTotalPrice">Rp 75.000</span>
+            </div>
+          </div>
+
+          <!-- Tombol Action Bayar Sekarang (Besar) -->
+          <button class="confirm-pay-btn" id="confirmPayBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            <span id="confirmPayBtnText">Bayar Sekarang (Rp 75.000)</span>
+          </button>
+
+          <!-- Tombol Kembali -->
+          <button type="button" class="confirm-back-link" id="confirmBackBtn">
+            ← Kembali & Ganti Nomor WhatsApp
+          </button>
+        </div>
+      </div>
+
       <!-- STATE 2: Two-Column Checkout View (Matching Screenshot) -->
       <div id="checkoutView" class="checkout-grid" style="display: none;">
 
@@ -128,7 +271,8 @@
                 <span class="countdown-badge">5 Menit</span>
               </div>
               <div class="countdown-digits-large" id="timerTextLarge">-- : --</div>
-              <div class="countdown-sync-note">Selesaikan pembayaran dalam 5 menit sebelum pesanan kedaluwarsa & voucher dilepas</div>
+              <div class="countdown-sync-note">Selesaikan pembayaran dalam 5 menit sebelum pesanan kedaluwarsa & voucher
+                dilepas</div>
             </div>
 
             <!-- Action Button: Bayar Sekarang (Popup) -->
