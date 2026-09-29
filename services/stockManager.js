@@ -132,7 +132,7 @@ class StockManager {
 
     return {
       productName: 'Google AI Pro Voucher (Aktivasi Resmi)',
-      price: 75000,
+      price: 50000,
       fee: 0,
       currency: 'Rp',
       merchantName: 'mybrotools',
@@ -199,9 +199,9 @@ class StockManager {
   }
 
   /**
-   * Locks the next available voucher for checkout in Supabase
+   * Locks multiple available vouchers for checkout in Supabase
    */
-  static async lockNextVoucher(orderId, buyerName = '', buyerPhone = '') {
+  static async lockVouchers(orderId, quantity = 1, buyerName = '', buyerPhone = '') {
     await this.cleanupExpiredLocks();
     const client = ensureSupabase();
     const settings = await this.getSettings();
@@ -215,30 +215,41 @@ class StockManager {
       .select('*')
       .eq('status', 'AVAILABLE')
       .order('id', { ascending: true })
-      .limit(1);
+      .limit(quantity);
 
     if (error) throw error;
 
-    if (!availableVouchers || availableVouchers.length === 0) {
-      throw new Error('Maaf, stok voucher saat ini sedang habis atau sedang diproses pembeli lain!');
+    if (!availableVouchers || availableVouchers.length < quantity) {
+      const availCount = availableVouchers ? availableVouchers.length : 0;
+      throw new Error(`Maaf, stok voucher tidak mencukupi! Tersedia hanya ${availCount} voucher.`);
     }
 
-    const voucher = availableVouchers[0];
-    const { error: lockErr } = await client
-      .from('vouchers')
-      .update({
-        status: 'LOCKED',
-        locked_until: lockExpiryIso,
-        order_id: orderId,
-        buyer_name: buyerName,
-        buyer_phone: buyerPhone,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', voucher.id);
+    const voucherIds = [];
+    for (const voucher of availableVouchers) {
+      const { error: lockErr } = await client
+        .from('vouchers')
+        .update({
+          status: 'LOCKED',
+          locked_until: lockExpiryIso,
+          order_id: orderId,
+          buyer_name: buyerName,
+          buyer_phone: buyerPhone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', voucher.id);
 
-    if (lockErr) throw lockErr;
+      if (lockErr) throw lockErr;
+      voucherIds.push(voucher.id);
+    }
 
-    return { voucherId: voucher.id, lockedUntil: lockExpiry };
+    return { voucherIds, voucherId: voucherIds[0], lockedUntil: lockExpiry };
+  }
+
+  /**
+   * Locks the next available voucher for checkout in Supabase (backward compatible)
+   */
+  static async lockNextVoucher(orderId, buyerName = '', buyerPhone = '') {
+    return this.lockVouchers(orderId, 1, buyerName, buyerPhone);
   }
 
   /**
@@ -249,9 +260,11 @@ class StockManager {
     const settings = await this.getSettings();
     const orderTimeoutMinutes = Number(settings.orderTimeoutMinutes) || 5;
     const orderExpiresIso = new Date(Date.now() + orderTimeoutMinutes * 60 * 1000).toISOString();
+    const quantity = Number(orderData.quantity) || 1;
 
-    const lockResult = await this.lockNextVoucher(
+    const lockResult = await this.lockVouchers(
       orderData.id,
+      quantity,
       orderData.customerName,
       orderData.customerPhone
     );
@@ -274,7 +287,9 @@ class StockManager {
       raw_data: {
         transactionId: orderData.transactionId || null,
         paymentUrl: orderData.paymentUrl || null,
+        quantity,
         voucherId: lockResult.voucherId,
+        voucherIds: lockResult.voucherIds,
         lockedUntil: lockResult.lockedUntil // 10 menit batas hold voucher (grace period)
       }
     };
@@ -294,7 +309,9 @@ class StockManager {
       id: data.id,
       transactionId: orderData.transactionId || null,
       amount: data.amount,
+      quantity,
       voucherId: lockResult.voucherId,
+      voucherIds: lockResult.voucherIds,
       customerName: data.customer_name,
       customerPhone: data.customer_phone,
       status: data.status,
@@ -450,17 +467,16 @@ class StockManager {
 
     const paidAt = new Date().toISOString();
     let voucherUrl = dbOrder.voucher_url;
-    const voucherId = dbOrder.raw_data?.voucherId;
-
-    if (voucherId) {
-      const { data: v } = await client
+    const voucherIds = dbOrder.raw_data?.voucherIds || [];
+    let voucherUrls = [];
+    if (voucherIds.length > 0) {
+      const { data: vouchers, error: vErr } = await client
         .from('vouchers')
-        .select('*')
-        .eq('id', voucherId)
-        .single();
-
-      if (v) {
-        voucherUrl = v.url;
+        .select('id,url')
+        .in('id', voucherIds);
+      if (vErr) throw vErr;
+      // Update each voucher to SOLD
+      for (const v of vouchers) {
         await client
           .from('vouchers')
           .update({
@@ -472,8 +488,11 @@ class StockManager {
             buyer_phone: dbOrder.customer_phone,
             updated_at: paidAt
           })
-          .eq('id', voucherId);
+          .eq('id', v.id);
+        voucherUrls.push(v.url);
       }
+      // Use first URL as legacy voucher_url field (kept for backward compatibility)
+      voucherUrl = voucherUrls[0];
     }
 
     const updatedRawData = {
@@ -499,14 +518,17 @@ class StockManager {
       order: {
         id: updatedOrder.id,
         transactionId: updatedOrder.transaction_id || updatedRawData?.transactionId || null,
-        voucherId: voucherId || updatedRawData?.voucherId || null,
+        voucherId: updatedRawData?.voucherId || null,
+        voucherIds: voucherIds,
+        quantity: updatedRawData?.quantity || 1,
         status: updatedOrder.status,
         amount: updatedOrder.amount,
         customerName: updatedOrder.customer_name,
         customerPhone: updatedOrder.customer_phone,
         paidAt: updatedOrder.paid_at
       },
-      voucherUrl
+      voucherUrl,
+      voucherUrls
     };
   }
 

@@ -181,7 +181,16 @@ app.post('/api/order/create', async (req, res) => {
       });
     }
 
-    const { customerName, customerPhone } = req.body;
+    const { customerName, customerPhone, quantity: rawQuantity } = req.body;
+    const quantity = Math.max(1, parseInt(rawQuantity, 10) || 1);
+
+    if (stockInfo.available < quantity) {
+      return res.status(400).json({
+        success: false,
+        error: `Maaf, stok voucher tidak mencukupi! Tersedia hanya ${stockInfo.available} voucher.`
+      });
+    }
+
     if (!customerPhone || customerPhone.trim().length < 8) {
       return res.status(400).json({
         success: false,
@@ -190,7 +199,8 @@ app.post('/api/order/create', async (req, res) => {
     }
 
     const orderId = generateOrderId();
-    const amount = stockInfo.settings.price;
+    const unitPrice = stockInfo.settings.price;
+    const amount = unitPrice * quantity;
     const fee = stockInfo.settings.fee || 0;
     const total = amount + fee;
 
@@ -202,7 +212,7 @@ app.post('/api/order/create', async (req, res) => {
       merchantName: stockInfo.settings.merchantName,
       customerName: customerName || 'Pembeli',
       customerPhone: customerPhone.trim(),
-      description: `Google AI Pro - ${orderId}`,
+      description: `Google AI Pro (${quantity}x) - ${orderId}`,
       appBaseUrl: currentBaseUrl
     });
 
@@ -210,6 +220,7 @@ app.post('/api/order/create', async (req, res) => {
       id: orderId,
       transactionId: paymentResult.transactionId || null,
       amount: paymentResult.totalAmount || total,
+      quantity,
       customerName: customerName || 'Pembeli',
       customerPhone: customerPhone.trim(),
       qrCodeData: paymentResult.qrCodeData,
@@ -239,6 +250,7 @@ app.post('/api/order/create', async (req, res) => {
         orderId: order.id,
         transactionId: order.transactionId,
         amount: order.amount,
+        quantity: order.quantity || 1,
         fee,
         total: order.amount,
         qrCodeUrl: order.qrCodeUrl,
