@@ -138,7 +138,8 @@ function requireAdminAuth(req, res, next) {
     return next();
   }
 
-  return res.status(401).json({
+  recordAdminFailedAttempt(clientIp);
+    return res.status(401).json({
     success: false,
     error: 'Akses ditolak: Autentikasi Admin diperlukan'
   });
@@ -462,15 +463,52 @@ app.post('/api/webhook/doku', async (req, res) => {
 // Admin Endpoints (Protected by Authentication)
 // -------------------------------------------------------------
 
+
+// In-memory brute force protection for admin login
+const adminLoginAttempts = new Map();
+function checkAdminBruteForce(ip) {
+  const now = Date.now();
+  const record = adminLoginAttempts.get(ip) || { count: 0, lockUntil: 0 };
+  if (record.lockUntil > now) {
+    const waitMins = Math.ceil((record.lockUntil - now) / 60000);
+    return { blocked: true, waitMins };
+  }
+  return { blocked: false };
+}
+function recordAdminFailedAttempt(ip) {
+  const now = Date.now();
+  const record = adminLoginAttempts.get(ip) || { count: 0, lockUntil: 0 };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockUntil = now + (15 * 60 * 1000); // 15 minutes lockout
+    record.count = 0;
+  }
+  adminLoginAttempts.set(ip, record);
+}
+function resetAdminAttempts(ip) {
+  adminLoginAttempts.delete(ip);
+}
+
 app.post('/api/admin/login', (req, res) => {
+  const clientIp = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const lockStatus = checkAdminBruteForce(clientIp);
+  if (lockStatus.blocked) {
+    return res.status(429).json({
+      success: false,
+      error: `Terlalu banyak percobaan gagal. Akses diblokir selama ${lockStatus.waitMins} menit untuk keamanan!`
+    });
+  }
+
   const { password } = req.body;
   if (!password || password !== ADMIN_PASSWORD) {
+    recordAdminFailedAttempt(clientIp);
     return res.status(401).json({
       success: false,
       error: 'Password Admin salah. Silakan coba lagi!'
     });
   }
 
+  resetAdminAttempts(clientIp);
   const token = generateAdminToken();
   res.json({
     success: true,
